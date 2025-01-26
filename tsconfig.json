@@ -23,5 +23,13 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": [
+    ".eslintrc.cjs",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    "**/*.cjs",
+    "**/*.mjs",
+  ],
 }
