@@ -10,9 +10,12 @@
       content='A browser-based anticheat primarily designed for gameshows'
     />
     <link rel='manifest' href='/manifest.json' />
+    <link rel='preload' as='font' href='/fonts/material-symbols-outlined.woff2' type='font/woff2' crossOrigin='anonymous' />
+    <link rel='preload' as='font' href='/fonts/PermanentMarker-Regular.ttf' type='font/truetype' crossOrigin='anonymous' />
+    <link rel='preload' as='font' href='/fonts/RubikMarkerHatch-Regular.ttf' type='font/truetype' crossOrigin='anonymous' />
     <title>Browser Anticheat</title>
   </head>
-  <body>
+  <body class='font-cursive noisy'>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id='root'/>
     <script type='module' src='/src/client/index.tsx'></script>

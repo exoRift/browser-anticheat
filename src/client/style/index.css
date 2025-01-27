@@ -1,1 +1,26 @@
-@import 'tailwindcss'
+@import 'tailwindcss';
+@import './icons.css';
+@import './fonts.css';
+
+@plugin 'daisyui';
+
+@theme {
+  --spacing: 0.5rem;
+  --font-cursive: 'Cursive Marker', var(--font-serif);
+  --font-hatch: 'Hatch Marker', var(--font-sans);
+}
+
+@layer utilities {
+  .noisy {
+    position: relative;
+  }
+
+  .noisy::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: url('/images/noise.png');
+    opacity: 0.4;
+  }
+}

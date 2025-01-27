@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'Hatch Marker';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/RubikMarkerHatch-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Cursive Marker';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/PermanentMarker-Regular.ttf') format('truetype');
+}

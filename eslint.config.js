@@ -10,7 +10,8 @@ export default [
     name: 'overrides',
     files: ['**/*.ts', '**/*.tsx'],
     rules: {
-      '@typescript-eslint/no-non-null-assertion': 'warn'
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      'comma-dangle': 'error'
     }
   }
 ]
