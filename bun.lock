@@ -2,7 +2,7 @@
   "lockfileVersion": 0,
   "workspaces": {
     "": {
-      "name": "browser-anticheat",
+      "name": "thor-anticheat",
       "dependencies": {
         "@polka/send-type": "^0.5.2",
         "body-parser": "^1.20.3",

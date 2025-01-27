@@ -30,7 +30,7 @@ function Entry (): React.ReactNode {
   const [token, setToken] = useState()
 
   return (
-    <Form className='flex flex-col gap-8 w-96 my-auto self-center rounded-2xl bg-secondary/20 backdrop-blur-sm p-8'>
+    <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl bg-secondary/20 backdrop-blur-sm p-8'>
       <h1 className='text-center text-3xl font-semibold font-hatch'>Enter the passcode provided by the Game Master</h1>
 
       <div className='space-y-1'>
@@ -38,9 +38,9 @@ function Entry (): React.ReactNode {
         <HiddenInput id='passcode' name='passcode' placeholder='Enter passcode here...' />
       </div>
 
-      <Button color='primary' className='self-end' type='submit'>
+      <Button color='primary' className='self-end group/btn' type='submit'>
         Submit
-        <div className='symbol'>arrow_forward</div>
+        <div className='symbol transition-transform group-hover/btn:translate-x-0.5'>arrow_forward</div>
       </Button>
     </Form>
   )
