@@ -2,8 +2,6 @@ import polka from 'polka'
 import { json } from 'body-parser'
 import serve from 'sirv'
 
-import { sendType } from './middleware/sendtype'
-
 const {
   PORT,
   NODE_ENV
@@ -13,7 +11,6 @@ const {
 const app = polka()
 app
   .use(json())
-  .use(sendType)
 
 // Attach frontend
 if (NODE_ENV === 'production') {
