@@ -6,6 +6,7 @@ const tseslint = neostandard.plugins['typescript-eslint']
 export default [
   ...neostandard({
     files: ['**/*.ts', '**/*.tsx', '**/*.*js'],
+    ignores: ['build/'],
     ts: true,
     env: ['node', 'es2025']
   }),
@@ -14,7 +15,7 @@ export default [
     tseslint.configs.stylisticTypeChecked,
     {
       files: ['**/*.ts', '**/*.tsx', '**/*.*js'],
-      ignores: ['build/', 'src/graphql'],
+      ignores: ['build/'],
       languageOptions: {
         parser: tseslint.parser,
         parserOptions: {
