@@ -2,6 +2,8 @@ import polka from 'polka'
 import { json } from 'body-parser'
 import serve from 'sirv'
 
+import * as terminal from './middleware/interface'
+
 const {
   PORT,
   NODE_ENV
@@ -32,7 +34,13 @@ if (NODE_ENV === 'production') {
 app
   .all('/api', (req, res) => void res.status(200).end())
 
+terminal.launch()
+
 // Listen
 app.listen(PORT, () => {
-  console.info('Server online listening at http://localhost:%s', PORT)
+  terminal.indicateOnline()
+  fetch('https://api.ipify.org')
+    .then((res) => res.text())
+    .then((ip) => terminal.indicateOnline(`http://${ip}:${PORT}`))
+    .catch((err: Error) => terminal.indicateOnline(err))
 })
