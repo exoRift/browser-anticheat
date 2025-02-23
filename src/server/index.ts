@@ -30,7 +30,7 @@ if (NODE_ENV === 'production') {
 
 // Define controllers
 app
-  .all('/api', (req, res) => { res.status(200).end() })
+  .all('/api', (req, res) => void res.status(200).end())
 
 // Listen
 app.listen(PORT, () => {
