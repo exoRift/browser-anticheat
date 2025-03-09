@@ -3,6 +3,8 @@ import blessed from 'blessed'
 import contrib from 'blessed-contrib'
 import open from 'open'
 
+import { MenuManager } from './menu'
+
 export const screen = blessed.screen({
   smartCSR: true
 })
@@ -16,9 +18,9 @@ export const menu: ReturnType<typeof blessed.list> = grid.set(1.5, 0, 6, 6, bles
   style: {
     selected: { bg: 'blue' },
     border: { fg: 'white' }
-  },
-  items: ['Set Password', 'Anticheat Settings', 'Shut Down']
+  }
 } satisfies Parameters<typeof blessed.list>[0])
+export const menuManager = new MenuManager(screen, menu, [1.5, 0, 6, 6])
 
 export const log: ReturnType<typeof blessed.log> = grid.set(7.5, 0, 5, 12, blessed.log, {
   label: ' {bold}Events{/bold} ',
@@ -29,17 +31,35 @@ export const log: ReturnType<typeof blessed.log> = grid.set(7.5, 0, 5, 12, bless
   style: {
     selected: { bg: 'blue' },
     border: { fg: 'white' }
-  }
-})
+  },
+  scrollable: true,
+  scrollback: 50
+} satisfies Parameters<typeof blessed.log>[0])
 
-screen.key('escape', () => process.exit())
+screen.key('\'', () => process.exit()) // TEMP
 
 export function launch (): void {
-  console.log = log.log.bind(log)
-  console.error = (e: string) => log.log(`{bg-red}${e}{/bg-red}`)
+  console._error = console.error
+  console.log = (l: string) => log.log(l)
+  console.error = (e: string) => log.log(`{red-bg}${e}{/red-bg}`)
   menu.focus()
   screen.render()
 }
+
+const components = [menu, log]
+for (const component of components) {
+  component.on('focus', () => {
+    component.style.border.fg = 'cyan'
+    screen.render()
+  })
+  component.on('blur', () => {
+    component.style.border.fg = 'white'
+    screen.render()
+  })
+}
+screen.on('keypress', (k) => {
+  if (k === '\t') screen.focusNext()
+})
 
 type BlessedEvent = blessed.Widgets.Events.IMouseEventArg & blessed.Widgets.Events.IKeyEventArg
 

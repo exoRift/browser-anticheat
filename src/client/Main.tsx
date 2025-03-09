@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react'
+import { createContext, useCallback, useState } from 'react'
 import { Button, Form } from 'react-daisyui'
 import { HiddenInput } from './components/HiddenInput'
 
@@ -27,10 +27,12 @@ function Engager (): React.ReactNode {
 }
 
 function Entry (): React.ReactNode {
-  const [token, setToken] = useState()
+  const loggedIn = document.cookie.includes('session')
+
+  if (loggedIn) return <Engager />
 
   return (
-    <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8'>
+    <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8' action='/api/join'>
       <h1 className='text-center text-3xl font-semibold font-hatch'>Enter the passcode provided by the Game Master</h1>
 
       <div className='space-y-1'>

@@ -1,8 +1,13 @@
-import polka from 'polka'
+import express from 'express'
+
 import { json } from 'body-parser'
 import serve from 'sirv'
+import cookieSession from 'cookie-session'
 
 import * as terminal from './middleware/interface'
+import state from './middleware/state'
+
+import join from './controllers/join'
 
 const {
   PORT,
@@ -10,31 +15,41 @@ const {
 } = process.env
 
 // Define server
-const app = polka()
+const app = express()
 app
   .use(json())
+  .use(cookieSession({
+    name: 'session',
+    httpOnly: false,
+    maxAge: 8 * 60 * 60,
+    keys: [crypto.randomUUID()]
+  }))
+  .use(state)
+
+// Define controllers
+app
+  .all('/api', (req, res) => void res.sendStatus(200))
+  .get('/api/join', join)
+
+terminal.launch()
 
 // Attach frontend
 if (NODE_ENV === 'production') {
-  app.use(serve('build', {
-    single: true,
-    ignores: '/api/*'
-  }))
+  app.use(express.static('build'))
+
+  app.get('/', (req, res) => res.sendFile('index.html', { root: 'build' }))
 } else {
   const { createServer: createViteServer } = await import('vite')
 
   const vite = await createViteServer({
-    server: { middlewareMode: true }
+    server: {
+      middlewareMode: true
+    },
+    appType: 'mpa'
   })
 
   app.use(vite.middlewares)
 }
-
-// Define controllers
-app
-  .all('/api', (req, res) => void res.status(200).end())
-
-terminal.launch()
 
 // Listen
 app.listen(PORT, () => {

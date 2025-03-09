@@ -3,13 +3,12 @@
 @import './fonts.css';
 
 @plugin 'daisyui';
-
-
 @plugin "daisyui/theme" {
   name: "night";
   default: true;
   prefersdark: true;
   color-scheme: "dark";
+  font-family: var(--font-cursive);
   --color-base-100: oklch(20.768% 0.039 265.754);
   --color-base-200: oklch(19.314% 0.037 265.754);
   --color-base-300: oklch(17.86% 0.034 265.754);
@@ -42,8 +41,14 @@
 
 @theme {
   --spacing: 0.5rem;
-  --font-cursive: 'Cursive Marker', var(--font-serif);
-  --font-hatch: 'Hatch Marker', var(--font-sans);
+  --font-cursive: 'CursiveMarker', var(--font-sans);
+  --font-hatch: 'HatchMarker', var(--font-sans);
+}
+
+@layer base {
+  input[type='password']:not(:placeholder-shown) {
+    letter-spacing: 1ch;
+  }
 }
 
 @layer utilities {
