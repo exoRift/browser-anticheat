@@ -6,7 +6,8 @@ import open from 'open'
 import { MenuManager } from './menu'
 
 export const screen = blessed.screen({
-  smartCSR: true
+  smartCSR: true,
+  title: 'Thor Anticheat'
 })
 export const grid = new contrib.grid({ screen, rows: 12, cols: 12 })
 export const menu: ReturnType<typeof blessed.list> = grid.set(1.5, 0, 6, 6, blessed.list, {
@@ -16,11 +17,11 @@ export const menu: ReturnType<typeof blessed.list> = grid.set(1.5, 0, 6, 6, bles
   mouse: true,
   border: { type: 'line' },
   style: {
-    selected: { bg: 'blue' },
+    selected: { bg: 'blue', fg: 'black' },
     border: { fg: 'white' }
   }
 } satisfies Parameters<typeof blessed.list>[0])
-export const menuManager = new MenuManager(screen, menu, [1.5, 0, 6, 6])
+export const menuManager = new MenuManager(screen, menu, grid, [1.5, 0, 6, 6])
 
 export const log: ReturnType<typeof blessed.log> = grid.set(7.5, 0, 5, 12, blessed.log, {
   label: ' {bold}Events{/bold} ',
@@ -39,9 +40,14 @@ export const log: ReturnType<typeof blessed.log> = grid.set(7.5, 0, 5, 12, bless
 screen.key('\'', () => process.exit()) // TEMP
 
 export function launch (): void {
-  console._error = console.error
   console.log = (l: string) => log.log(l)
-  console.error = (e: string) => log.log(`{red-bg}${e}{/red-bg}`)
+
+  if (process.env.NODE_ENV === 'production') console.error = (e: string) => log.log(`{red-bg}${e}{/red-bg}`)
+  else {
+    const ogError = console.error
+    console.error = (e: string) => { ogError(e); log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`) }
+  }
+
   menu.focus()
   screen.render()
 }
@@ -58,7 +64,7 @@ for (const component of components) {
   })
 }
 screen.on('keypress', (k) => {
-  if (k === '\t') screen.focusNext()
+  if (!menuManager.locked && k === '\t') screen.focusNext()
 })
 
 type BlessedEvent = blessed.Widgets.Events.IMouseEventArg & blessed.Widgets.Events.IKeyEventArg

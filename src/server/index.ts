@@ -1,11 +1,9 @@
 import express from 'express'
 
-import { json } from 'body-parser'
-import serve from 'sirv'
 import cookieSession from 'cookie-session'
 
 import * as terminal from './middleware/interface'
-import state from './middleware/state'
+import { middleware as stateMiddleware } from './middleware/state'
 
 import join from './controllers/join'
 
@@ -17,19 +15,19 @@ const {
 // Define server
 const app = express()
 app
-  .use(json())
   .use(cookieSession({
     name: 'session',
     httpOnly: false,
     maxAge: 8 * 60 * 60,
     keys: [crypto.randomUUID()]
   }))
-  .use(state)
+  .use(stateMiddleware)
 
 // Define controllers
 app
   .all('/api', (req, res) => void res.sendStatus(200))
-  .get('/api/join', join)
+  .use('/api/join', express.urlencoded({ extended: false }))
+  .post('/api/join', join)
 
 terminal.launch()
 

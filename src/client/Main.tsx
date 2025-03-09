@@ -1,4 +1,6 @@
-import { createContext, useCallback, useState } from 'react'
+import { createContext, useState } from 'react'
+import { twMerge } from 'tailwind-merge'
+
 import { Button, Form } from 'react-daisyui'
 import { HiddenInput } from './components/HiddenInput'
 
@@ -31,13 +33,15 @@ function Entry (): React.ReactNode {
 
   if (loggedIn) return <Engager />
 
+  const invalid = window.location.search.includes('invalid')
   return (
-    <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8' action='/api/join'>
+    <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8' action='/api/join' method='POST'>
       <h1 className='text-center text-3xl font-semibold font-hatch'>Enter the passcode provided by the Game Master</h1>
 
       <div className='space-y-1'>
         <label htmlFor='passcode' className='block'>Passcode</label>
-        <HiddenInput id='passcode' name='passcode' placeholder='Enter passcode here...' />
+        <HiddenInput id='passcode' name='passcode' placeholder='Enter passcode here...' className={twMerge(invalid && '[&_input]:border-error')} />
+        {invalid && <label className='text-error'>Passcode incorrect</label>}
       </div>
 
       <Button color='primary' className='self-end group/btn' type='submit'>

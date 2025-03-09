@@ -1,19 +1,21 @@
 import type { Handler } from 'express'
 
+interface State {
+  passcode: string | null
+}
+
 declare module 'express-serve-static-core' {
   interface Request {
-    state: {
-      password: string | null
-    }
+    state: State
   }
 }
 
-const state: Handler = function state (req, res, next): void {
-  req.state = {
-    password: null
-  }
+export const state: State = {
+  passcode: null
+}
+
+export const middleware: Handler = function middleware (req, res, next): void {
+  req.state = state
 
   next()
 }
-
-export default state

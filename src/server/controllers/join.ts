@@ -1,11 +1,9 @@
 import type { Handler } from 'express'
 
 const join: Handler = function (req, res) {
-  process.exit(1)
-  console._error('bruh')
-  console._error(req.body)
-
-  res.redirect('/')
+  if (!req.state.passcode || req.body.passcode === req.state.passcode) {
+    res.redirect('/')
+  } else res.redirect('/?invalid')
 }
 
 export default join

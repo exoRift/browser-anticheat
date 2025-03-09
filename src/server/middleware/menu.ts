@@ -1,9 +1,21 @@
-import type blessed from 'blessed'
+import blessed from 'blessed'
+import type BlessedContrib from 'blessed-contrib'
+
+import { state } from './state'
+
+declare module 'blessed' {
+  /* eslint-disable-next-line @typescript-eslint/no-namespace */
+  export namespace Widgets {
+    interface ListElement {
+      selected: number
+    }
+  }
+}
 
 export type Option = {
   type: 'action'
   name: string
-  action: (dims: [number, number, number, number]) => void
+  action: (menu: MenuManager) => void
 } | {
   type: 'submenu'
   name: string
@@ -14,7 +26,91 @@ export const options: Option[] = [
   {
     type: 'action',
     name: 'Set Password',
-    action: () => process.exit(0)
+    action: (menu: MenuManager) => {
+      const input: ReturnType<typeof blessed.textbox> = menu.grid.set(menu.dims[0], menu.dims[1], 1.5, menu.dims[3], blessed.textbox, {
+        border: {
+          type: 'line'
+        },
+        style: {
+          fg: 'white',
+          border: {
+            fg: 'cyan'
+          }
+        },
+        inputOnFocus: true
+      } satisfies Parameters<typeof blessed.textbox>[0])
+      if (state.passcode) input.setValue(state.passcode)
+      const placeholder: ReturnType<typeof blessed.text> = menu.grid.set(menu.dims[0], menu.dims[1], 1.5, menu.dims[3], blessed.text, {
+        style: {
+          fg: 'gray'
+        },
+        inputOnFocus: true,
+        content: 'Enter Password Here'
+      } satisfies Parameters<typeof blessed.text>[0])
+
+      const list: ReturnType<typeof blessed.list> = menu.grid.set(menu.dims[0] + 1.5, menu.dims[1], menu.dims[2] - 1.5, menu.dims[3], blessed.list, {
+        items: ['Set Password', 'Clear Password', 'Cancel'],
+        border: {
+          type: 'line'
+        },
+        style: {
+          fg: 'white',
+          bg: 'black',
+          border: {
+            fg: 'cyan'
+          },
+          item: {
+            fg: 'white',
+            bg: 'black'
+          },
+          selected: {
+            fg: 'black',
+            bg: 'yellow'
+          }
+        }
+      } satisfies Parameters<typeof blessed.list>[0])
+
+      menu.screen.append(input)
+      menu.screen.append(list)
+      menu.screen.append(placeholder)
+
+      function focusInput (): void {
+        input.focus()
+      }
+      input.on('blur', focusInput)
+      focusInput()
+
+      function renderPlaceholder (key?: string): void {
+        const empty = (input.value.length === 1 && key === 'backspace') || (!input.value.length && (!key || key.length > 1))
+        if (empty) placeholder.show()
+        else placeholder.hide()
+      }
+      renderPlaceholder()
+
+      input.on('keypress', (ch, key) => {
+        switch (key.name) {
+          case 'up': list.up(1); break
+          case 'down': list.down(1); break
+          case 'enter':
+            switch (list.getItem(list.selected).getText()) {
+              case 'Set Password': state.passcode = input.value; break
+              case 'Clear Password': state.passcode = null; break
+            }
+          case 'escape': /* eslint-disable-line no-fallthrough */
+            input.off('change', renderPlaceholder)
+            input.off('blur', focusInput)
+            input.destroy()
+            list.destroy()
+            placeholder.destroy()
+            menu.back()
+            break
+        }
+        renderPlaceholder(key.name)
+        menu.screen.render()
+      })
+
+      menu.screen.render()
+    }
   },
   {
     type: 'action',
@@ -29,14 +125,18 @@ export const options: Option[] = [
 ]
 
 export class MenuManager {
-  private screen: ReturnType<typeof blessed.screen>
   private component: ReturnType<typeof blessed.list>
   private activeMenu = ''
-  private dims: [number, number, number, number]
+  readonly screen: ReturnType<typeof blessed.screen>
+  readonly grid: BlessedContrib.grid
+  readonly dims: [row: number, col: number, rowSpan: number, colSpan: number]
 
-  constructor (screen: ReturnType<typeof blessed.screen>, component: ReturnType<typeof blessed.list>, dims: [number, number, number, number]) {
-    this.screen = screen
+  locked = false
+
+  constructor (screen: ReturnType<typeof blessed.screen>, component: ReturnType<typeof blessed.list>, grid: BlessedContrib.grid, dims: [row: number, col: number, rowSpan: number, colSpan: number]) {
     this.component = component
+    this.screen = screen
+    this.grid = grid
     this.dims = dims
     this.render()
     this.registerEvents()
@@ -57,10 +157,14 @@ export class MenuManager {
 
   drill (submenu: string): void {
     this.activeMenu += '.' + submenu
+    this.component.focus()
+    this.render()
   }
 
   back (): void {
     this.activeMenu = this.activeMenu.slice(0, this.activeMenu.lastIndexOf('.'))
+    this.component.focus()
+    this.render()
   }
 
   registerEvents (): void {
@@ -69,7 +173,7 @@ export class MenuManager {
       const active = this.getOptions()
       const option = active.find((o) => o.name === item.getText())
       switch (option?.type) {
-        case 'action': option.action(this.dims); break
+        case 'action': option.action(this); break
         case 'submenu': this.drill(option.name); break
       }
     })
