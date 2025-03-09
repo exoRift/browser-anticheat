@@ -36,7 +36,10 @@ function Entry (): React.ReactNode {
   const invalid = window.location.search.includes('invalid')
   return (
     <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8' action='/api/join' method='POST'>
-      <h1 className='text-center text-3xl font-semibold font-hatch'>Enter the passcode provided by the Game Master</h1>
+      <div>
+        <h1 className='text-center text-3xl font-semibold font-hatch'>Enter the passcode provided by the Game Master</h1>
+        <h2 className='text-center text-xl italic font-hatch text-base-content/50'>(or leave it blank if there is no password)</h2>
+      </div>
 
       <div className='space-y-1'>
         <label htmlFor='passcode' className='block'>Passcode</label>
