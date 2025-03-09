@@ -18,7 +18,11 @@ export const state: State = {
 
 export const middleware: Handler = function middleware (req, res, next): void {
   req.state = state
-  if (req.session?.valid && !state.sessions.includes(req.session)) req.session = null
+  if (req.session?.valid && !state.sessions.includes(req.session)) {
+    req.session = null
+    res.redirect('/')
+    return
+  }
 
   next()
 }

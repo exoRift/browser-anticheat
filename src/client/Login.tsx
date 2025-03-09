@@ -1,37 +1,15 @@
-import { createContext, useState } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import { Button, Form } from 'react-daisyui'
 import { HiddenInput } from './components/HiddenInput'
 
-interface SessionContextType {
-  id?: string
-}
-
-const SessionContext = createContext<[SessionContextType, React.Dispatch<React.SetStateAction<SessionContextType>>]>([{}, () => {}])
-
-export default function Main (): React.ReactNode {
-  const [session, setSession] = useState<SessionContextType>({})
-
-  return (
-    <main className='flex flex-col h-screen'>
-      <SessionContext.Provider value={[session, setSession]}>
-        {session.id
-          ? <Engager />
-          : <Entry />}
-      </SessionContext.Provider>
-    </main>
-  )
-}
-
-function Engager (): React.ReactNode {
-  
-}
-
-function Entry (): React.ReactNode {
+export default function Login (): React.ReactNode {
   const loggedIn = document.cookie.includes('session')
 
-  if (loggedIn) return <Engager />
+  if (loggedIn) {
+    window.location.pathname = '/game'
+    return
+  }
 
   const invalid = window.location.search.includes('invalid')
   return (

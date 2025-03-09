@@ -6,7 +6,11 @@ const join: Handler = function (req, res) {
   if (!req.state.passcode || req.body.passcode === req.state.passcode) {
     req.session.valid = true
     req.session.joinedAt = new Date().toISOString()
-    res.redirect('/')
+    req.session.sequencesServed = 0
+    req.session.mistakes = 0
+    req.session.totalBlurDuration = 0
+    req.session.currentlyBlurred = false
+    res.redirect('/profile')
   } else res.redirect('/?invalid')
 }
 

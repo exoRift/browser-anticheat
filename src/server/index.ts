@@ -35,7 +35,7 @@ terminal.launch()
 if (NODE_ENV === 'production') {
   app.use(express.static('build'))
 
-  app.get('/', (req, res) => res.sendFile('index.html', { root: 'build' }))
+  app.get('*', (req, res) => res.sendFile('index.html', { root: 'build' }))
 } else {
   const { createServer: createViteServer } = await import('vite')
 
@@ -43,7 +43,7 @@ if (NODE_ENV === 'production') {
     server: {
       middlewareMode: true
     },
-    appType: 'mpa'
+    appType: 'spa'
   })
 
   app.use(vite.middlewares)

@@ -5,6 +5,10 @@ declare namespace CookieSessionInterfaces {
     valid: boolean
     name?: string
     joinedAt: string
+    sequencesServed: number
+    mistakes: number
+    totalBlurDuration: number
+    currentlyBlurred: boolean
   }
 }
 

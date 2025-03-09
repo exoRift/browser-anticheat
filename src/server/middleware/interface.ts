@@ -3,6 +3,7 @@ import blessed from 'blessed'
 import contrib from 'blessed-contrib'
 import open from 'open'
 
+import { state } from './state'
 import { MenuManager } from './menu'
 
 export const screen = blessed.screen({
