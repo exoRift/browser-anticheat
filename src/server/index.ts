@@ -4,32 +4,39 @@ import cookieSession from 'cookie-session'
 
 import * as terminal from './middleware/interface'
 import { middleware as stateMiddleware } from './middleware/state'
+import { secure } from './middleware/secure'
 
-import join from './controllers/join'
+import * as join from './controllers/join'
+import * as profile from './controllers/profile'
 
 const {
   PORT,
   NODE_ENV
 } = process.env
 
+terminal.launch()
+terminal.indicateOnline()
+
 // Define server
 const app = express()
 app
   .use(cookieSession({
-    name: 'session',
     httpOnly: false,
-    maxAge: 8 * 60 * 60,
-    keys: [crypto.randomUUID()]
+    maxAge: 8 * 60 * 60 * 1000,
+    sameSite: 'strict',
+    signed: false // TODO: figure out why signing doesn't work
   }))
   .use(stateMiddleware)
+  .use(secure(['/profile', '/game'], '/', ['/'], '/profile'))
 
 // Define controllers
 app
-  .all('/api', (req, res) => void res.sendStatus(200))
+  .all('/api', (req, res) => void res.sendStatus(200).end())
   .use('/api/join', express.urlencoded({ extended: false }))
-  .post('/api/join', join)
-
-terminal.launch()
+  .post('/api/join', join.post)
+  .get('/api/profile', profile.get)
+  .use('/api/profile', express.urlencoded({ extended: false }))
+  .post('/api/profile', profile.post)
 
 // Attach frontend
 if (NODE_ENV === 'production') {
@@ -51,7 +58,6 @@ if (NODE_ENV === 'production') {
 
 // Listen
 app.listen(PORT, () => {
-  terminal.indicateOnline()
   fetch('https://api.ipify.org')
     .then((res) => res.text())
     .then((ip) => terminal.indicateOnline(`http://${ip}:${PORT}`))

@@ -25,6 +25,7 @@
     "@types/blessed": "^0.1.25",
     "@types/bun": "latest",
     "@types/cookie-session": "^2.0.49",
+    "@types/dom-view-transitions": "^1.0.6",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",

@@ -4,13 +4,6 @@ import { Button, Form } from 'react-daisyui'
 import { HiddenInput } from './components/HiddenInput'
 
 export default function Login (): React.ReactNode {
-  const loggedIn = document.cookie.includes('session')
-
-  if (loggedIn) {
-    window.location.pathname = '/game'
-    return
-  }
-
   const invalid = window.location.search.includes('invalid')
   return (
     <Form className='flex flex-col gap-8 md:w-96 my-auto self-center rounded-2xl glass [--glass-reflect-degree:190deg] [--glass-opacity:0.1] backdrop-blur-sm p-8' action='/api/join' method='POST'>
@@ -21,7 +14,7 @@ export default function Login (): React.ReactNode {
 
       <div className='space-y-1'>
         <label htmlFor='passcode' className='block'>Passcode</label>
-        <HiddenInput id='passcode' name='passcode' placeholder='Enter passcode here...' className={twMerge(invalid && '[&_input]:border-error')} />
+        <HiddenInput name='passcode' placeholder='Enter passcode here...' className={twMerge(invalid && '[&_input]:border-error')} />
         {invalid && <label className='text-error'>Passcode incorrect</label>}
       </div>
 
