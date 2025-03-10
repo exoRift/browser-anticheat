@@ -43,12 +43,7 @@
   --spacing: 0.5rem;
   --font-cursive: 'CursiveMarker', var(--font-sans);
   --font-hatch: 'HatchMarker', var(--font-sans);
-}
-
-@layer base {
-  input[type='password']:not(:placeholder-shown) {
-    letter-spacing: 1ch;
-  }
+  --font-space: 'SpaceMono', var(--font-mono);
 }
 
 @layer utilities {
@@ -91,12 +86,14 @@
 @keyframes spreadOut {
   0% {
     clip-path: polygon(0% 0%, 100% 0%, 50% 100%, 50% 100%);
-  }
-  100% {
+  } 100% {
     clip-path: polygon(-20% 0%, 120% 0%, 100% 100%, 0% 100%);
   }
 }
 
 ::view-transition-new(root) {
   animation: dropIn 0.4s forwards, spreadOut 0.4s forwards 0.4s;
+}
+::view-transition-new(fade) {
+  animation: fadeIn 0.4s forwards;
 }

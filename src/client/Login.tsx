@@ -14,7 +14,7 @@ export default function Login (): React.ReactNode {
 
       <div className='space-y-1'>
         <label htmlFor='passcode' className='block'>Passcode</label>
-        <HiddenInput name='passcode' placeholder='Enter passcode here...' className={twMerge(invalid && '[&_input]:border-error')} />
+        <HiddenInput name='passcode' placeholder='Enter passcode here...' className={twMerge('font-space', invalid && '[&_input]:border-error')} />
         {invalid && <label className='text-error'>Passcode incorrect</label>}
       </div>
 

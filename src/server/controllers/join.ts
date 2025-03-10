@@ -13,6 +13,6 @@ export const post: Handler = function post (req, res) {
       totalBlurDuration: 0,
       currentlyBlurred: false
     })
-    res.redirect(req.headers.referer!)
-  } else res.redirect(req.originalUrl + '?invalid')
+    res.redirect('/profile')
+  } else res.redirect('/?invalid')
 }

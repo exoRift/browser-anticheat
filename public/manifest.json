@@ -3,6 +3,6 @@
   "name": "Thor Anticheat",
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff"
+  "theme_color": "#fede1c",
+  "background_color": "#0f172a"
 }

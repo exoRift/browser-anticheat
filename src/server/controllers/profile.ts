@@ -19,5 +19,5 @@ export const post: Handler = function post (req, res) {
   if (!req.session) return void res.status(500).send('Session is null when it should not be').end()
 
   if (req.body.name) req.session.name = req.body.name
-  res.redirect(req.headers.referer!)
+  res.redirect('/profile')
 }

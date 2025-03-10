@@ -13,3 +13,11 @@
   font-display: swap;
   src: url('/fonts/RubikMarkerHatch-Regular.ttf') format('truetype');
 }
+
+@font-face {
+  font-family: 'SpaceMono';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+}
