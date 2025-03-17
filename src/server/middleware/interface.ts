@@ -11,7 +11,6 @@ export const screen = blessed.screen({
   title: 'Thor Anticheat'
 })
 export const grid = new contrib.grid({ screen, rows: 12, cols: 12, top: 3 })
-console.error(grid)
 export const menu: ReturnType<typeof blessed.list> = grid.set(0, 0, 6, 4, blessed.list, {
   label: ' {bold}Menu{/bold} ',
   tags: true,
@@ -44,27 +43,34 @@ log.height = undefined as any
 export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, contrib.table, {
   label: ' {bold}Players{/bold} ',
   tags: true,
-  keys: true,
-  mouse: true,
-  border: { type: 'line' },
+  focusable: false,
+  selectedBg: 'black',
+  selectedFg: undefined,
   fg: 'white',
-  selectedBg: 'blue',
-  selectedFg: 'black',
+  border: { type: 'line' },
   style: {
     border: { fg: 'white' }
   },
   columnSpacing: 1,
-  columnWidth: [16, 12, 12, 12],
+  columnWidth: [16, 10, 10, 8, 14],
   right: 0
 } satisfies Parameters<typeof contrib.table>[0])
 userTable.width = undefined as any
-userTable.setData({
-  headers: ['Player', '# Served', '# Mistakes', 'Failure Rate'],
-  data: [
-    ['Bruh', '0', '1', '2'],
-    ['Bruh', '0', '1', '2']
-  ]
-})
+
+setInterval(() => {
+  userTable.setData({
+    headers: ['Player', 'Served', 'Mistakes', 'Fail %', 'Standing'],
+    data: Array.from(state.sessions.values()).map((s) => [
+      s.name ?? '<unset>',
+      s.sequencesServed.toString(),
+      s.mistakes.toString(),
+      s.sequencesServed ? Intl.NumberFormat(undefined, { style: 'percent' }).format(s.mistakes / s.sequencesServed) : '0%',
+      s.totalBlurDuration > 10_000 ? '{yellow-fg}SUSPICIOUS{/yellow-fg}' : s.totalInspects ? '{red-fg}CHEATING{/red-fg}' : '{green-fg}Good{/green-fg}'
+    ])
+  })
+  userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!.select(NaN) // get rid of selected formatting
+  screen.render()
+}, 500)
 
 screen.key('\'', () => process.exit()) // TEMP
 
@@ -81,20 +87,18 @@ export function launch (): void {
   menu.focus()
   screen.render()
 }
-console.error(userTable.type)
 
-// blessed table makes this necessary; curses.
-const components = [[menu, menu], [log, log], [userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!, userTable]]
-for (const [focusable, display] of components) {
-  focusable.on('focus', () => {
-    if (display.style.border.fg !== 'cyan') {
-      display.style.border.fg = 'cyan'
+const components = [menu, log]
+for (const component of components) {
+  component.on('focus', () => {
+    if (component.style.border.fg !== 'cyan') {
+      component.style.border.fg = 'cyan'
       screen.render()
     }
   })
-  focusable.on('blur', () => {
-    if (screen.focused !== focusable && display.style.border.fg !== 'white') {
-      display.style.border.fg = 'white'
+  component.on('blur', () => {
+    if (screen.focused !== component && component.style.border.fg !== 'white') {
+      component.style.border.fg = 'white'
       screen.render()
     }
   })

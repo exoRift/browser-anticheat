@@ -11,9 +11,12 @@ declare namespace CookieSessionInterfaces {
 
 declare type Session = CookieSessionInterfaces.CookieSessionObject
 declare interface SessionStats {
+  name?: string
   joinedAt: string
   sequencesServed: number
   mistakes: number
   totalBlurDuration: number
-  currentlyBlurred: boolean
+  blurredSince: number | undefined
+  totalBlurs: number
+  totalInspects: number
 }
