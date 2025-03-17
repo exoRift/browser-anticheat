@@ -10,8 +10,9 @@ export const screen = blessed.screen({
   smartCSR: true,
   title: 'Thor Anticheat'
 })
-export const grid = new contrib.grid({ screen, rows: 12, cols: 12 })
-export const menu: ReturnType<typeof blessed.list> = grid.set(1.5, 0, 6, 6, blessed.list, {
+export const grid = new contrib.grid({ screen, rows: 12, cols: 12, top: 3 })
+console.error(grid)
+export const menu: ReturnType<typeof blessed.list> = grid.set(0, 0, 6, 4, blessed.list, {
   label: ' {bold}Menu{/bold} ',
   tags: true,
   keys: true,
@@ -22,21 +23,48 @@ export const menu: ReturnType<typeof blessed.list> = grid.set(1.5, 0, 6, 6, bles
     border: { fg: 'white' }
   }
 } satisfies Parameters<typeof blessed.list>[0])
-export const menuManager = new MenuManager(screen, menu, grid, [1.5, 0, 6, 6])
+export const menuManager = new MenuManager(screen, menu, grid, [0, 0, 6, 4])
 
-export const log: ReturnType<typeof blessed.log> = grid.set(7.5, 0, 5, 12, blessed.log, {
+export const log: ReturnType<typeof blessed.log> = grid.set(6, 0, 5, 12, blessed.log, {
   label: ' {bold}Events{/bold} ',
   tags: true,
   keys: true,
   mouse: true,
   border: { type: 'line' },
   style: {
-    selected: { bg: 'blue' },
+    selected: { bg: 'blue', fg: 'black' },
     border: { fg: 'white' }
   },
   scrollable: true,
-  scrollback: 50
+  scrollback: 50,
+  bottom: 0
 } satisfies Parameters<typeof blessed.log>[0])
+log.height = undefined as any
+
+export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, contrib.table, {
+  label: ' {bold}Players{/bold} ',
+  tags: true,
+  keys: true,
+  mouse: true,
+  border: { type: 'line' },
+  fg: 'white',
+  selectedBg: 'blue',
+  selectedFg: 'black',
+  style: {
+    border: { fg: 'white' }
+  },
+  columnSpacing: 1,
+  columnWidth: [16, 12, 12, 12],
+  right: 0
+} satisfies Parameters<typeof contrib.table>[0])
+userTable.width = undefined as any
+userTable.setData({
+  headers: ['Player', '# Served', '# Mistakes', 'Failure Rate'],
+  data: [
+    ['Bruh', '0', '1', '2'],
+    ['Bruh', '0', '1', '2']
+  ]
+})
 
 screen.key('\'', () => process.exit()) // TEMP
 
@@ -53,16 +81,22 @@ export function launch (): void {
   menu.focus()
   screen.render()
 }
+console.error(userTable.type)
 
-const components = [menu, log]
-for (const component of components) {
-  component.on('focus', () => {
-    component.style.border.fg = 'cyan'
-    screen.render()
+// blessed table makes this necessary; curses.
+const components = [[menu, menu], [log, log], [userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!, userTable]]
+for (const [focusable, display] of components) {
+  focusable.on('focus', () => {
+    if (display.style.border.fg !== 'cyan') {
+      display.style.border.fg = 'cyan'
+      screen.render()
+    }
   })
-  component.on('blur', () => {
-    component.style.border.fg = 'white'
-    screen.render()
+  focusable.on('blur', () => {
+    if (screen.focused !== focusable && display.style.border.fg !== 'white') {
+      display.style.border.fg = 'white'
+      screen.render()
+    }
   })
 }
 screen.on('keypress', (k) => {
@@ -71,52 +105,47 @@ screen.on('keypress', (k) => {
 
 type BlessedEvent = blessed.Widgets.Events.IMouseEventArg & blessed.Widgets.Events.IKeyEventArg
 
+const indicator: blessed.Widgets.TextElement & { ip?: string } = blessed.text({
+  border: { type: 'line' },
+  tags: true,
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 3
+})
+indicator.on('click', (e: BlessedEvent) => {
+  if (indicator.ip && e.x >= 13) void open(indicator.ip)
+})
+screen.append(indicator)
 export function indicateOnline (ip?: string | Error): void {
-  let options: Parameters<typeof blessed.text>[0]
-
   if (ip) {
     if (ip instanceof Error) {
-      options = {
-        label: ' {bold}Status{/bold} ',
-        content: `{bold}ERROR{/bold} - ${ip.message}`,
-        tags: true,
-        border: { type: 'line' },
-        style: {
-          fg: 'red',
-          border: { fg: 'white' }
-        }
+      indicator.ip = undefined
+      indicator.setLabel(' {bold}Status{/bold} ')
+      indicator.setContent(`{bold}ERROR{/bold} - ${ip.message}`)
+      indicator.style = {
+        fg: 'red',
+        border: { fg: 'white' }
       }
     } else {
-      options = {
-        label: ' {bold}Status{/bold} ',
-        content: `{bold}ONLINE{/bold}. IP: {underline}${ip}{/underline}`,
-        tags: true,
-        border: { type: 'line' },
-        style: {
-          fg: 'green',
-          border: { fg: 'white' }
-        }
-      }
-    }
-  } else {
-    options = {
-      label: ' {bold}Status{/bold} ',
-      content: '{bold}OFFLINE{/bold}',
-      tags: true,
-      border: { type: 'line' },
-      style: {
-        fg: 'gray',
+      indicator.ip = ip
+      indicator.setLabel(' {bold}Status{/bold} ')
+      indicator.setContent(`{bold}ONLINE{/bold}. IP: {underline}${ip}{/underline}`)
+      indicator.style = {
+        fg: 'green',
         border: { fg: 'white' }
       }
     }
+  } else {
+    indicator.ip = undefined
+    indicator.setLabel(' {bold}Status{/bold} ')
+    indicator.setContent('{bold}OFFLINE{/bold}')
+    indicator.style = {
+      fg: 'gray',
+      border: { fg: 'white' }
+    }
   }
 
-  const text: ReturnType<typeof blessed.text> = grid.set(0, 0, 1.5, 12, blessed.text, options)
-  if (typeof ip === 'string') {
-    text.on('click', (e: BlessedEvent) => {
-      if (e.x >= 13) void open(ip)
-    })
-  }
-
+  indicator.render()
   screen.render()
 }

@@ -48,7 +48,8 @@ if (NODE_ENV === 'production') {
 
   const vite = await createViteServer({
     server: {
-      middlewareMode: true
+      middlewareMode: true,
+      hotUpdateEnvironments: async () => terminal.screen.render()
     },
     appType: 'spa'
   })
