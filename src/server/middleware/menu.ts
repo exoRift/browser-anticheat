@@ -113,9 +113,15 @@ export const options: Option[] = [
     }
   },
   {
-    type: 'action',
+    type: 'submenu',
     name: 'Anticheat Settings',
-    action: () => process.exit(0)
+    options: [
+      {
+        type: 'action',
+        name: 'Key Update Interval',
+        action: () => {}
+      }
+    ]
   },
   {
     type: 'action',
@@ -152,16 +158,24 @@ export class MenuManager {
       choices = option?.type === 'submenu' ? option.options : []
     }
 
-    return choices
+    return submenus.length > 1
+      ? choices.concat({
+        type: 'action',
+        name: 'Back',
+        action: () => this.back()
+      })
+      : choices
   }
 
   drill (submenu: string): void {
+    this.component.select(0)
     this.activeMenu += '.' + submenu
     this.component.focus()
     this.render()
   }
 
   back (): void {
+    this.component.select(0)
     this.activeMenu = this.activeMenu.slice(0, this.activeMenu.lastIndexOf('.'))
     this.component.focus()
     this.render()

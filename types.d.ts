@@ -1,22 +1,21 @@
 /// <reference types="cookie-session" />
 
-declare namespace CookieSessionInterfaces {
-  interface CookieSessionObject {
-    id: string
-    valid: boolean
-    name?: string
-    joinedAt: string
-  }
+import type expressWs from 'express-ws'
+
+declare module 'express-serve-static-core' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Application extends expressWs.Router {}
 }
 
-declare type Session = CookieSessionInterfaces.CookieSessionObject
-declare interface SessionStats {
-  name?: string
-  joinedAt: string
-  sequencesServed: number
-  mistakes: number
-  totalBlurDuration: number
-  blurredSince: number | undefined
-  totalBlurs: number
-  totalInspects: number
+declare global {
+  namespace CookieSessionInterfaces {
+    interface CookieSessionObject {
+      id: string
+      valid: boolean
+      name?: string
+      joinedAt: string
+    }
+  }
+
+  type Session = CookieSessionInterfaces.CookieSessionObject
 }

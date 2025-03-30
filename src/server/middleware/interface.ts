@@ -52,7 +52,7 @@ export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, 
     border: { fg: 'white' }
   },
   columnSpacing: 1,
-  columnWidth: [16, 10, 10, 8, 14],
+  columnWidth: [16, 10, 10, 8, 100],
   right: 0
 } satisfies Parameters<typeof contrib.table>[0])
 userTable.width = undefined as any
@@ -60,12 +60,12 @@ userTable.width = undefined as any
 setInterval(() => {
   userTable.setData({
     headers: ['Player', 'Served', 'Mistakes', 'Fail %', 'Standing'],
-    data: Array.from(state.sessions.values()).map((s) => [
+    data: Array.from(state.sessions.map.values()).map((s) => [
       s.name ?? '<unset>',
       s.sequencesServed.toString(),
       s.mistakes.toString(),
       s.sequencesServed ? Intl.NumberFormat(undefined, { style: 'percent' }).format(s.mistakes / s.sequencesServed) : '0%',
-      s.totalBlurDuration > 10_000 ? '{yellow-fg}SUSPICIOUS{/yellow-fg}' : s.totalInspects ? '{red-fg}CHEATING{/red-fg}' : '{green-fg}Good{/green-fg}'
+      state.sessions.getStanding(s)
     ])
   })
   userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!.select(NaN) // get rid of selected formatting

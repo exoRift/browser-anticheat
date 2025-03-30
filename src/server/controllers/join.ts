@@ -6,16 +6,7 @@ export const post: Handler = function post (req, res) {
   if (!req.state.passcode || req.body.passcode === req.state.passcode) {
     req.session.valid = true
     req.session.joinedAt = new Date().toISOString()
-    req.state.sessions.set(req.session.id, {
-      name: req.session.name,
-      joinedAt: req.session.joinedAt,
-      sequencesServed: 0,
-      mistakes: 0,
-      totalBlurDuration: 0,
-      blurredSince: undefined,
-      totalBlurs: 0,
-      totalInspects: 0
-    })
+    req.state.sessions.add(req.session)
     res.redirect('/profile')
   } else res.redirect('/?invalid')
 }

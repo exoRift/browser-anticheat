@@ -1,6 +1,7 @@
 import express from 'express'
 
 import cookieSession from 'cookie-session'
+import ws from 'express-ws'
 
 import * as terminal from './middleware/interface'
 import { middleware as stateMiddleware } from './middleware/state'
@@ -8,6 +9,7 @@ import { secure } from './middleware/secure'
 
 import * as join from './controllers/join'
 import * as profile from './controllers/profile'
+import * as connect from './controllers/connect'
 
 const {
   PORT,
@@ -19,6 +21,7 @@ terminal.indicateOnline()
 
 // Define server
 const app = express()
+ws(app)
 app
   .use(cookieSession({
     httpOnly: false,
@@ -37,6 +40,7 @@ app
   .get('/api/profile', profile.get)
   .use('/api/profile', express.urlencoded({ extended: false }))
   .post('/api/profile', profile.post)
+  .ws('/api/connect', connect.ws)
 
 // Attach frontend
 if (NODE_ENV === 'production') {

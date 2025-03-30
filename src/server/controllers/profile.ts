@@ -20,7 +20,7 @@ export const post: Handler = function post (req, res) {
 
   if (req.body.name) {
     req.session.name = req.body.name
-    const meta = req.state.sessions.get(req.session.id)
+    const meta = req.state.sessions.map.get(req.session.id)
     if (meta) meta.name = req.session.name
   }
   res.redirect('/profile')
