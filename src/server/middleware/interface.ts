@@ -3,8 +3,8 @@ import blessed from 'blessed'
 import contrib from 'blessed-contrib'
 import open from 'open'
 
-import { state } from './state'
-import { MenuManager } from './menu'
+import { state } from './state.ts'
+import { MenuManager } from './menu.ts'
 
 export const screen = blessed.screen({
   smartCSR: true,
@@ -60,12 +60,12 @@ userTable.width = undefined as any
 setInterval(() => {
   userTable.setData({
     headers: ['Player', 'Served', 'Mistakes', 'Fail %', 'Standing'],
-    data: Array.from(state.sessions.map.values()).map((s) => [
+    data: Array.from(state.sessions.metadata.entries()).map(([id, s]) => [
       s.name ?? '<unset>',
       s.sequencesServed.toString(),
       s.mistakes.toString(),
       s.sequencesServed ? Intl.NumberFormat(undefined, { style: 'percent' }).format(s.mistakes / s.sequencesServed) : '0%',
-      state.sessions.getStanding(s)
+      state.sessions.getStanding(id)
     ])
   })
   userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!.select(NaN) // get rid of selected formatting

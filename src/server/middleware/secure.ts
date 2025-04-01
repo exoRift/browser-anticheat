@@ -3,7 +3,7 @@ import type { Handler } from 'express'
 export const secure = function secure (secureRoutes: string[], secureFallback: string, insecureRoutes: string[], insecureFallback: string): Handler {
   return function (req, res, next) {
     if (req.session && !req.session.id) req.session.id = Date.now().toString()
-    if (req.session?.valid && !req.state.sessions.map.has(req.session.id)) {
+    if (req.session?.valid && !req.state.sessions.metadata.has(req.session.id)) {
       req.session = null
       return res.redirect('/')
     }

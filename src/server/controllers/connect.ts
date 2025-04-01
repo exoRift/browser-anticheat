@@ -1,17 +1,12 @@
 import type { WebsocketRequestHandler } from 'express-ws'
 
 export const ws: WebsocketRequestHandler = function ws (socket, req) {
-  if (!req.session) return socket.terminate()
+  if (!req.session?.valid) return socket.terminate()
+  if (!req.session.name) {
+    socket.send('ERROR:SET NAME FIRST')
+    socket.close()
+    return
+  }
 
-  socket.on('message', (msg) => {
-    const [command, data] = msg.toString().split(':')
-
-    switch (command) {
-      case 'SEQUENCE': {
-        void req.state.sessions.getSequence(req.session!.id)
-          .then((id) => socket.send('SEQUENCE:' + id))
-        break
-      }
-    }
-  })
+  req.state.sessions.registerSocket(req.session, socket)
 }

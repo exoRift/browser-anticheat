@@ -1,7 +1,7 @@
 import blessed from 'blessed'
 import type BlessedContrib from 'blessed-contrib'
 
-import { state } from './state'
+import { state } from './state.ts'
 
 declare module 'blessed' {
   /* eslint-disable-next-line @typescript-eslint/no-namespace */
@@ -118,7 +118,7 @@ export const options: Option[] = [
     options: [
       {
         type: 'action',
-        name: 'Key Update Interval',
+        name: 'Captcha Update Interval',
         action: () => {}
       }
     ]
@@ -131,7 +131,7 @@ export const options: Option[] = [
 ]
 
 export class MenuManager {
-  private component: ReturnType<typeof blessed.list>
+  private readonly component: ReturnType<typeof blessed.list>
   private activeMenu = ''
   readonly screen: ReturnType<typeof blessed.screen>
   readonly grid: BlessedContrib.grid

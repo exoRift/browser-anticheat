@@ -3,13 +3,14 @@ import express from 'express'
 import cookieSession from 'cookie-session'
 import ws from 'express-ws'
 
-import * as terminal from './middleware/interface'
-import { middleware as stateMiddleware } from './middleware/state'
-import { secure } from './middleware/secure'
+import * as terminal from './middleware/interface.ts'
+import { middleware as stateMiddleware } from './middleware/state.ts'
+import { secure } from './middleware/secure.ts'
 
-import * as join from './controllers/join'
-import * as profile from './controllers/profile'
-import * as connect from './controllers/connect'
+import * as join from './controllers/join.ts'
+import * as profile from './controllers/profile.ts'
+import * as connect from './controllers/connect.ts'
+import * as captcha from './controllers/captcha.ts'
 
 const {
   PORT,
@@ -41,6 +42,8 @@ app
   .use('/api/profile', express.urlencoded({ extended: false }))
   .post('/api/profile', profile.post)
   .ws('/api/connect', connect.ws)
+  .get('/api/captcha/:id', captcha.get)
+  .all('/api/*', (req, res) => void res.sendStatus(404).end())
 
 // Attach frontend
 if (NODE_ENV === 'production') {
