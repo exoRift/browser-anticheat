@@ -9,4 +9,5 @@ export const ws: WebsocketRequestHandler = function ws (socket, req) {
   }
 
   req.state.sessions.registerSocket(req.session, socket)
+  console.log(`${req.session.name} connects`)
 }

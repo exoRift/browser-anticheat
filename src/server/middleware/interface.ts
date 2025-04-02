@@ -6,6 +6,9 @@ import open from 'open'
 import { state } from './state.ts'
 import { MenuManager } from './menu.ts'
 
+const MIN_WIDTH = 85
+const MIN_HEIGHT = 15
+
 export const screen = blessed.screen({
   smartCSR: true,
   title: 'Thor Anticheat'
@@ -52,19 +55,36 @@ export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, 
     border: { fg: 'white' }
   },
   columnSpacing: 1,
-  columnWidth: [16, 10, 10, 8, 100],
+  columnWidth: [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100],
   right: 0
 } satisfies Parameters<typeof contrib.table>[0])
 userTable.width = undefined as any
 
+const sizeWarning = blessed.box({
+  top: 0,
+  bottom: 0,
+  right: 0,
+  left: 0,
+  bg: 'black',
+  fg: 'white',
+  align: 'center',
+  valign: 'middle',
+  content: 'Please increase your terminal size'
+})
+
 setInterval(() => {
+  if ((screen.width as number) < MIN_WIDTH || (screen.height as number) < MIN_HEIGHT) screen.append(sizeWarning)
+  else screen.remove(sizeWarning)
+
+  userTable.options.columnWidth = [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100]
   userTable.setData({
-    headers: ['Player', 'Served', 'Mistakes', 'Fail %', 'Standing'],
+    headers: ['Player', 'Served', 'Mistks', 'Blurred', 'Off', 'Standing'],
     data: Array.from(state.sessions.metadata.entries()).map(([id, s]) => [
       s.name ?? '<unset>',
       s.sequencesServed.toString(),
       s.mistakes.toString(),
-      s.sequencesServed ? Intl.NumberFormat(undefined, { style: 'percent' }).format(s.mistakes / s.sequencesServed) : '0%',
+      Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(s.totalBlurTime / 1000) + 's',
+      Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(s.totalOffTime / 1000) + 's',
       state.sessions.getStanding(id)
     ])
   })

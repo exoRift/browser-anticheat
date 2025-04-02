@@ -11,6 +11,7 @@ const CAPTCHA_SIZE = 30
 const COLORS = ['deeppink', 'green']
 const CAPTCHA_CHARACTERS_LEFT = '1QAZ2WSX3EDC4RFV5TGB'
 const CAPTCHA_CHARACTERS_RIGHT = '6YHN7UJM8IK9OLP'
+const PING_THRESHOLD = 200
 export const CAPTCHA_PATH = path.resolve(process.cwd(), '_captchas/')
 
 const dirPromise = fs.mkdir(CAPTCHA_PATH, { recursive: true })
@@ -21,17 +22,22 @@ interface SessionStats {
   joinedAt: string
   sequencesServed: number
   mistakes: number
+  _storedBlurTime: number
   totalBlurTime: number
   /** The timestamp of the active blur */
   _blurredSince: number | undefined
   totalBlurs: number
   totalInspects: number
   /** Amount of time player has been off the chosen keys */
+  _storedOffTime: number
   totalOffTime: number
   /** The timestamp of the last update that hasn't been popped */
   _offSince: number | undefined
   _heldKeys: Set<string>
   _currentSequenceSince: number | undefined
+  _lastPingSince: number | undefined
+  totalLatePings: number
+  totalDisconnects: number
 }
 
 interface State {
@@ -58,20 +64,51 @@ class SessionManager {
       joinedAt: session.joinedAt,
       sequencesServed: 0,
       mistakes: 0,
-      totalBlurTime: 0,
+      _storedBlurTime: 0,
+      get totalBlurTime () {
+        let amnt = this._storedBlurTime
+        if (this._blurredSince !== undefined) amnt += Date.now() - this._blurredSince
+        return amnt
+      },
       totalBlurs: 0,
       _blurredSince: undefined,
       totalInspects: 0,
-      totalOffTime: 0,
+      _storedOffTime: 0,
+      get totalOffTime () {
+        let amnt = this._storedOffTime
+        if (this._offSince !== undefined) amnt += Date.now() - this._offSince
+        return amnt
+      },
       _offSince: undefined,
       _heldKeys: new Set(),
-      _currentSequenceSince: undefined
+      _currentSequenceSince: undefined,
+      _lastPingSince: undefined,
+      totalLatePings: 0,
+      totalDisconnects: 0
     })
   }
 
   registerSocket (session: Session, socket: ws.WebSocket): void {
     this.sockets.set(session.id, socket)
-    socket.addEventListener('close', () => this.sockets.delete(session.id), { once: true })
+    socket.addEventListener('close', () => {
+      const meta = this.metadata.get(session.id)
+      this.sockets.delete(session.id)
+      if (meta) ++meta.totalDisconnects
+    }, { once: true })
+
+    socket.on('ping', () => {
+      const meta = this.metadata.get(session.id)
+      if (!meta) {
+        socket.terminate()
+        return
+      }
+
+      if (meta._lastPingSince !== undefined && Date.now() - meta._lastPingSince > PING_THRESHOLD) {
+        ++meta.totalLatePings
+        console.warn(`${meta.name} pinged late!`)
+      }
+      meta._lastPingSince = Date.now()
+    })
 
     socket.on('message', (msg) => {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -86,7 +123,7 @@ class SessionManager {
 
       switch (command) {
         case 'SEQUENCE': {
-          console.log(`${meta.name} requested a new captcha`)
+          console.log(`${meta.name} requests a new captcha`)
           void this.generateNewSequenceForSession(session)
           break
         }
@@ -100,7 +137,7 @@ class SessionManager {
 
           if (captcha.sequence.has(key)) socket.send(`CORRECT:${key}`)
           else {
-            console.log(`${meta.name} made a mistake`)
+            console.log(`${meta.name} makes a mistake`)
             ++meta.mistakes
             socket.send(`INCORRECT:${key}`)
           }
@@ -121,13 +158,24 @@ class SessionManager {
 
           break
         }
+        case 'INSPECT': ++meta.totalInspects; break
+        case 'BLUR':
+          console.log(`${meta.name} blurs the window`)
+          meta._blurredSince = Date.now()
+          ++meta.totalBlurs
+          break
+        case 'FOCUS':
+          console.log(`${meta.name} refocuses the window`)
+          if (meta._blurredSince) meta._storedBlurTime += Date.now() - meta._blurredSince
+          meta._blurredSince = undefined
+          break
       }
 
       if (captcha) {
         if (meta._heldKeys.symmetricDifference(captcha.sequence).size) {
           if (meta._offSince === undefined) meta._offSince = Date.now()
         } else {
-          meta.totalOffTime += Date.now() - (meta._offSince ?? 0)
+          meta._storedOffTime += Date.now() - (meta._offSince ?? 0)
           meta._offSince = undefined
           socket.send('COMPLETE')
         }
@@ -151,7 +199,7 @@ class SessionManager {
     socket.send('SEQUENCE:' + captcha.id)
 
     this.intervals.set(session.id, setTimeout(() => {
-      console.log('Auto-generated new captcha for ' + (data.name ?? 'MISSING NAME'))
+      console.log('Auto-generating a new captcha for ' + (data.name ?? session.id))
       void this.generateNewSequenceForSession(session)
     }, this.interval))
   }
@@ -163,10 +211,18 @@ class SessionManager {
    */
   getStanding (id: string): string {
     const data = this.metadata.get(id)
-    if (!this.captchas.map.has(id) || !data) return '{gray-fg}DC\'d{/gray-fg}'
+    if (!this.captchas.map.has(id) || !data || !this.sockets.has(id)) return '{gray-fg}DC\'d{/gray-fg}'
 
     if (data.totalInspects) return '{red-fg}CHEATING{/red-fg}'
+    if (data._blurredSince !== undefined) return '{red-fg}Blurred{/red-fg}'
     if (data.totalBlurTime > 10_000) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
+    if (data.totalLatePings > 5) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
+    if (data.totalOffTime > 14_000) {
+      if (data._offSince && !data._heldKeys.size) return '{yellow-fg}Idle{/yellow-fg}'
+      else return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
+    }
+    if (data.totalDisconnects > 4) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
+    if (data.mistakes > 10) return '{yellow-fg}Clumsy{/yellow-fg}'
 
     return '{green-fg}Good{/green-fg}'
   }
@@ -180,7 +236,7 @@ class CaptchaManager {
   map = new Map<string, Captcha>()
 
   static generateSequence (): Set<string> {
-    const numKeys = Math.round(Math.random() * 2 + 3)
+    const numKeys = Math.round(Math.random() * 2 + 4)
     const sequence = new Set<string>()
     while (sequence.size < numKeys) {
       const characterPool = Math.random() > 0.5 ? CAPTCHA_CHARACTERS_LEFT : CAPTCHA_CHARACTERS_RIGHT

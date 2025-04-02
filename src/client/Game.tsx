@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMap } from '../hooks/useMap'
 import { twMerge } from 'tailwind-merge'
 import { Button } from 'react-daisyui'
+
+import { addListener, launch, removeListener, stop } from 'devtools-detector'
 
 export default function Game (): React.ReactNode {
   const connection = useRef<WebSocket>(undefined)
@@ -12,6 +14,22 @@ export default function Game (): React.ReactNode {
   const heldKeys = useMap<string, boolean | null>()
 
   useEffect(() => setValid(false), [heldKeys.size])
+
+  useEffect(() => {
+    if (!loading) {
+      function onOpen (isOpen: boolean): void {
+        if (isOpen) connection.current?.send('INSPECT')
+      }
+
+      addListener(onOpen)
+      launch()
+
+      return () => {
+        removeListener(onOpen)
+        stop()
+      }
+    }
+  }, [loading])
 
   useEffect(() => {
     const aborter = new AbortController()
@@ -29,6 +47,12 @@ export default function Game (): React.ReactNode {
 
       connection.current?.send(`UP:${key}`)
       heldKeys.delete(key)
+    }, { signal: aborter.signal })
+    window.addEventListener('blur', () => {
+      connection.current?.send('BLUR')
+    }, { signal: aborter.signal })
+    window.addEventListener('focus', () => {
+      connection.current?.send('FOCUS')
     }, { signal: aborter.signal })
 
     return () => aborter.abort()
@@ -79,6 +103,8 @@ export default function Game (): React.ReactNode {
           <li key={key} className={twMerge(status === null ? 'text-gray-500' : status ? 'text-green-400' : 'text-red-700')}>{key}</li>
         ))}
       </ul>
+
+      <span className='opacity-40 self-start ml-2 text-sm'>Macs and older keyboards may not support all key combinations</span>
     </div>
   )
 }

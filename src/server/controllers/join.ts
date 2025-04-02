@@ -7,6 +7,7 @@ export const post: Handler = function post (req, res) {
     req.session.valid = true
     req.session.joinedAt = new Date().toISOString()
     req.state.sessions.add(req.session)
+    console.log(`${req.session.id} joins`)
     res.redirect('/profile')
   } else res.redirect('/?invalid')
 }

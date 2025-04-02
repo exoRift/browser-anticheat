@@ -21,6 +21,7 @@
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "daisyui": "^5.0.0",
+    "devtools-detector": "^2.0.22",
     "eslint": "^9.19.0",
     "eslint-config": "github:exoRift/eslint-config",
     "react": "^19.0.0",
