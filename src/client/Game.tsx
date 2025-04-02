@@ -11,6 +11,7 @@ export default function Game (): React.ReactNode {
   const [loading, setLoading] = useState(true)
   const [captcha, setCaptcha] = useState<string>()
   const [valid, setValid] = useState(false)
+  const [error, setError] = useState<string>()
   const heldKeys = useMap<string, boolean | null>()
 
   useEffect(() => setValid(false), [heldKeys.size])
@@ -77,21 +78,38 @@ export default function Game (): React.ReactNode {
           case 'CORRECT': if (heldKeys.has(data)) heldKeys.set(data, true); break
           case 'INCORRECT': if (heldKeys.has(data)) heldKeys.set(data, false); break
           case 'COMPLETE': setValid(true); break
+          case 'ERROR':
+            if (data === 'SET NAME FIRST') window.location.href = '/profile'
+            else setError(data)
+            break
         }
       })
     }, { once: true })
+
+    connection.current.addEventListener('close', () => {
+      setError('The connection has been closed')
+    }, { once: true })
   }, [])
+
+  if (error) {
+    return (
+      <div className='text-center my-auto'>
+        <h1 className='text-3xl text-error font-hatch'>Something went wrong</h1>
+        <h2 className='text-lg text-base-content font-mono'>{error}</h2>
+      </div>
+    )
+  }
 
   if (loading || !captcha) {
     return (
-      <h1 className='text-xl text-center self-center'>Connecting...</h1>
+      <h1 className='text-xl text-center my-auto'>Connecting...</h1>
     )
   }
 
   return (
     <div className='grow flex flex-col justify-around items-center'>
       <div className='text-center'>
-        <h1 className='text-2xl'>Press and hold the keys shown below</h1>
+        <h1 className='text-2xl font-hatch'>Press and hold the keys shown below</h1>
         <h3 className='text-lg text-base-content/50'>There are no zeros</h3>
       </div>
 
@@ -104,7 +122,7 @@ export default function Game (): React.ReactNode {
         ))}
       </ul>
 
-      <span className='opacity-40 self-start ml-2 text-sm'>Macs and older keyboards may not support all key combinations</span>
+      <span className='opacity-40 self-start ml-2 text-sm font-hatch'>Macs and older keyboards may not support all key combinations</span>
     </div>
   )
 }

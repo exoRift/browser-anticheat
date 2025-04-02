@@ -97,12 +97,8 @@ screen.key('\'', () => process.exit()) // TEMP
 export function launch (): void {
   console.log = (l: string) => log.log(l)
 
-  if (process.env.NODE_ENV === 'production') {
-    console.error = (...es) => es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
-  } else {
-    const ogError = console.error
-    console.error = (...es) => { ogError(...es); es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`)) }
-  }
+  console.error = (...es) => es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
+  console.warn = (...es) => es.forEach((e) => log.log(`{yellow-bg}{black-fg}${e}{/black-fg}{/yellow-bg}`))
 
   menu.focus()
   screen.render()

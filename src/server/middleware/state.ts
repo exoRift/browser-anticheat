@@ -90,11 +90,24 @@ class SessionManager {
 
   registerSocket (session: Session, socket: ws.WebSocket): void {
     this.sockets.set(session.id, socket)
-    socket.addEventListener('close', () => {
-      const meta = this.metadata.get(session.id)
+    socket.once('close', () => {
       this.sockets.delete(session.id)
-      if (meta) ++meta.totalDisconnects
-    }, { once: true })
+      const meta = this.metadata.get(session.id)
+
+      meta?._heldKeys.clear()
+
+      if (meta) {
+        ++meta.totalDisconnects
+
+        if (meta._blurredSince) meta._storedBlurTime += Date.now() - meta._blurredSince
+        meta._blurredSince = undefined
+
+        if (meta._offSince !== undefined) meta._storedOffTime += Date.now() - meta._offSince
+        meta._offSince = undefined
+      }
+
+      console.warn(`${meta?.name ?? session.id} disconnects`)
+    })
 
     socket.on('ping', () => {
       const meta = this.metadata.get(session.id)
@@ -158,24 +171,33 @@ class SessionManager {
 
           break
         }
-        case 'INSPECT': ++meta.totalInspects; break
+        case 'INSPECT':
+          ++meta.totalInspects
+          console.error(`${meta.name} opens the devtools`)
+
+          break
         case 'BLUR':
+          meta._heldKeys.clear()
           console.log(`${meta.name} blurs the window`)
-          meta._blurredSince = Date.now()
+
+          if (meta._blurredSince === undefined) meta._blurredSince = Date.now()
           ++meta.totalBlurs
+
           break
         case 'FOCUS':
           console.log(`${meta.name} refocuses the window`)
+
           if (meta._blurredSince) meta._storedBlurTime += Date.now() - meta._blurredSince
           meta._blurredSince = undefined
+
           break
       }
 
-      if (captcha) {
+      if (captcha && ['DOWN', 'UP'].includes(command)) {
         if (meta._heldKeys.symmetricDifference(captcha.sequence).size) {
           if (meta._offSince === undefined) meta._offSince = Date.now()
         } else {
-          meta._storedOffTime += Date.now() - (meta._offSince ?? 0)
+          if (meta._offSince !== undefined) meta._storedOffTime += Date.now() - meta._offSince
           meta._offSince = undefined
           socket.send('COMPLETE')
         }

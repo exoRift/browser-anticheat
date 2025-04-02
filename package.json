@@ -1,6 +1,14 @@
 {
   "name": "thor-anticheat",
   "module": "src/server/index.ts",
+  "type": "module",
+  "scripts": {
+    "prestart": "vite build",
+    "start": "NODE_ENV=production bun run .",
+    "dev": "bun run --watch .",
+    "lint": "eslint .",
+    "update-icons": "curl -L https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.woff2 -o public/fonts/material-symbols-outlined.woff2"
+  },
   "dependencies": {
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
@@ -38,15 +46,7 @@
   "patchedDependencies": {
     "blessed-contrib@4.11.0": "patches/blessed-contrib@4.11.0.patch"
   },
-  "scripts": {
-    "prestart": "vite build",
-    "start": "NODE_ENV=production bun run .",
-    "dev": "bun run --watch .",
-    "lint": "eslint .",
-    "update-icons": "curl -L https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.woff2 -o public/fonts/material-symbols-outlined.woff2"
-  },
   "trustedDependencies": [
     "skia-canvas"
-  ],
-  "type": "module"
+  ]
 }
