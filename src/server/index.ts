@@ -51,6 +51,7 @@ if (NODE_ENV === 'production') {
 
   app.get('*', (req, res) => res.sendFile('index.html', { root: 'build' }))
 } else {
+  // @bun nobuild[
   const { createServer: createViteServer } = await import('vite')
 
   const vite = await createViteServer({
@@ -62,6 +63,7 @@ if (NODE_ENV === 'production') {
   })
 
   app.use(vite.middlewares)
+  // @bun nobuild]
 }
 
 // Listen

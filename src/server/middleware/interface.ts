@@ -69,12 +69,21 @@ const sizeWarning = blessed.box({
   fg: 'white',
   align: 'center',
   valign: 'middle',
-  content: 'Please increase your terminal size'
+  content: 'Please increase your terminal size\nOr Press esc to exit'
 })
 
+function escKeypress (_: unknown, e: blessed.Widgets.Events.IKeyEventArg): void {
+  if (e.name === 'escape') process.exit()
+}
+
 setInterval(() => {
-  if ((screen.width as number) < MIN_WIDTH || (screen.height as number) < MIN_HEIGHT) screen.append(sizeWarning)
-  else screen.remove(sizeWarning)
+  if ((screen.width as number) < MIN_WIDTH || (screen.height as number) < MIN_HEIGHT) {
+    screen.append(sizeWarning)
+    screen.on('keypress', escKeypress)
+  } else {
+    screen.remove(sizeWarning)
+    screen.off('keypress', escKeypress)
+  }
 
   userTable.options.columnWidth = [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100]
   userTable.setData({

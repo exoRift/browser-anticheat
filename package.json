@@ -6,6 +6,7 @@
     "prestart": "vite build",
     "start": "NODE_ENV=production bun run .",
     "dev": "bun run --watch .",
+    "build": "bun run prestart && bun run build.ts && bun build --compile --outfile thor ./build/index.js",
     "lint": "eslint .",
     "update-icons": "curl -L https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.woff2 -o public/fonts/material-symbols-outlined.woff2"
   },
