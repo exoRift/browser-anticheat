@@ -106,8 +106,8 @@ screen.key('\'', () => process.exit()) // TEMP
 export function launch (): void {
   console.log = (l: string) => log.log(l)
 
-  console.error = (...es) => es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
-  console.warn = (...es) => es.forEach((e) => log.log(`{yellow-bg}{black-fg}${e}{/black-fg}{/yellow-bg}`))
+  // console.error = (...es) => es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
+  // console.warn = (...es) => es.forEach((e) => log.log(`{yellow-bg}{black-fg}${e}{/black-fg}{/yellow-bg}`))
 
   menu.focus()
   screen.render()
@@ -116,7 +116,7 @@ export function launch (): void {
 const components = [menu, log]
 for (const component of components) {
   component.on('focus', () => {
-    if (component.style.border.fg !== 'cyan') {
+    if (screen.focused === component && component.style.border.fg !== 'cyan') {
       component.style.border.fg = 'cyan'
       screen.render()
     }

@@ -238,6 +238,7 @@ class SessionManager {
     if (data.totalInspects) return '{red-fg}CHEATING{/red-fg}'
     if (data._blurredSince !== undefined) return '{red-fg}Blurred{/red-fg}'
     if (data.totalBlurTime > 10_000) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
+    if (data.totalBlurs > 6) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
     if (data.totalLatePings > 5) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
     if (data.totalOffTime > 14_000) {
       if (data._offSince && !data._heldKeys.size) return '{yellow-fg}Idle{/yellow-fg}'

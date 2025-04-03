@@ -27,7 +27,7 @@ export const options: Option[] = [
     type: 'action',
     name: 'Set Password',
     action: (menu: MenuManager) => {
-      const input: ReturnType<typeof blessed.textbox> = menu.grid.set(menu.dims[0], menu.dims[1], 1.5, menu.dims[3], blessed.textbox, {
+      const input: ReturnType<typeof blessed.textbox> = menu.grid.set(menu.dims[0], menu.dims[1], 2, menu.dims[3], blessed.textbox, {
         border: {
           type: 'line'
         },
@@ -39,16 +39,18 @@ export const options: Option[] = [
         },
         inputOnFocus: true
       } satisfies Parameters<typeof blessed.textbox>[0])
+      input.height = 3
       if (state.passcode) input.setValue(state.passcode)
-      const placeholder: ReturnType<typeof blessed.text> = menu.grid.set(menu.dims[0], menu.dims[1], 1.5, menu.dims[3], blessed.text, {
+      const placeholder: ReturnType<typeof blessed.text> = menu.grid.set(menu.dims[0], menu.dims[1], 2, menu.dims[3], blessed.text, {
         style: {
           fg: 'gray'
         },
         inputOnFocus: true,
         content: 'Enter Password Here'
       } satisfies Parameters<typeof blessed.text>[0])
+      placeholder.height = 3
 
-      const list: ReturnType<typeof blessed.list> = menu.grid.set(menu.dims[0] + 1.5, menu.dims[1], menu.dims[2] - 1.5, menu.dims[3], blessed.list, {
+      const list: ReturnType<typeof blessed.list> = menu.grid.set(menu.dims[0], menu.dims[1], menu.dims[2], menu.dims[3], blessed.list, {
         items: ['Set Password', 'Clear Password', 'Cancel'],
         border: {
           type: 'line'
@@ -69,19 +71,17 @@ export const options: Option[] = [
           }
         }
       } satisfies Parameters<typeof blessed.list>[0])
+      list.top += '+6'
+      ;(list.position as any).height += '-3'
 
       menu.screen.append(input)
       menu.screen.append(list)
       menu.screen.append(placeholder)
 
-      function focusInput (): void {
-        input.focus()
-      }
-      input.on('blur', focusInput)
-      focusInput()
+      input.focus()
 
       function renderPlaceholder (key?: string): void {
-        const empty = (input.value.length === 1 && key === 'backspace') || (!input.value.length && (!key || key.length > 1))
+        const empty = (input.value.length === 1 && key === 'backspace') || (!input.value.length && (!key || (key.length > 1 && !['space', 'tab'].includes(key))))
         if (empty) placeholder.show()
         else placeholder.hide()
       }
@@ -98,14 +98,13 @@ export const options: Option[] = [
             }
           case 'escape': /* eslint-disable-line no-fallthrough */
             input.off('change', renderPlaceholder)
-            input.off('blur', focusInput)
             input.destroy()
             list.destroy()
             placeholder.destroy()
             menu.back()
             break
         }
-        renderPlaceholder(key.name)
+        renderPlaceholder(key.name ?? key.ch)
         menu.screen.render()
       })
 
@@ -119,7 +118,14 @@ export const options: Option[] = [
       {
         type: 'action',
         name: 'Captcha Update Interval',
-        action: () => {}
+        action: () => {
+          const input = blessed.input({
+            width: '50%',
+            height: '50%',
+            left: 'center',
+            top: 'center'
+          })
+        }
       }
     ]
   },
