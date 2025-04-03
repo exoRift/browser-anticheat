@@ -50,6 +50,7 @@ export default function Game (): React.ReactNode {
       heldKeys.delete(key)
     }, { signal: aborter.signal })
     window.addEventListener('blur', () => {
+      heldKeys.clear()
       connection.current?.send('BLUR')
     }, { signal: aborter.signal })
     window.addEventListener('focus', () => {

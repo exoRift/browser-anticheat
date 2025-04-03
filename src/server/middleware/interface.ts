@@ -1,5 +1,4 @@
 import blessed from 'blessed'
-import contrib from 'blessed-contrib'
 import open from 'open'
 
 import { state } from './state.ts'
@@ -46,6 +45,42 @@ export const menu = blessed.list({
 menuBox.append(menu)
 export const menuManager = new MenuManager(screen, menu, menuBox)
 
+export const players = blessed.listtable({
+  parent: grid,
+  tags: true,
+  keys: true,
+  mouse: true,
+  clickable: true,
+  noCellBorders: true,
+  invertSelected: false,
+  border: { type: 'line' },
+  style: {
+    border: { fg: 'white' },
+    header: {
+      fg: 'blue',
+      bold: true
+    },
+    cell: {
+      selected: {
+        bg: 'gray'
+      }
+    }
+  },
+  scrollbar: {
+    ch: ' ',
+    track: {
+      bg: 'gray'
+    },
+    style: {
+      inverse: true
+    }
+  },
+  left: '33%',
+  top: 0,
+  right: 0,
+  height: '50%'
+})
+
 export const log = blessed.log({
   label: ' {bold}Events{/bold} ',
   tags: true,
@@ -65,26 +100,6 @@ export const log = blessed.log({
 })
 grid.append(log)
 
-export const userTable = contrib.table({
-  label: ' {bold}Players{/bold} ',
-  tags: true,
-  focusable: false,
-  selectedBg: 'black',
-  selectedFg: undefined,
-  fg: 'white',
-  border: { type: 'line' },
-  style: {
-    border: { fg: 'white' }
-  },
-  columnSpacing: 1,
-  columnWidth: [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100],
-  left: '33%',
-  top: 0,
-  right: 0,
-  height: '50%'
-})
-grid.append(userTable)
-
 const sizeWarning = blessed.box({
   top: 0,
   bottom: 0,
@@ -96,6 +111,8 @@ const sizeWarning = blessed.box({
   valign: 'middle',
   content: 'Please increase your terminal size\nOr Press esc to exit'
 })
+sizeWarning.hide()
+screen.append(sizeWarning)
 
 function escKeypress (_: unknown, e: blessed.Widgets.Events.IKeyEventArg): void {
   if (e.name === 'escape') process.exit()
@@ -103,26 +120,32 @@ function escKeypress (_: unknown, e: blessed.Widgets.Events.IKeyEventArg): void 
 
 setInterval(() => {
   if ((screen.width as number) < MIN_WIDTH || (screen.height as number) < MIN_HEIGHT) {
-    screen.append(sizeWarning)
-    screen.on('keypress', escKeypress)
-  } else {
-    screen.remove(sizeWarning)
+    if (sizeWarning.hidden) {
+      sizeWarning.show()
+      screen.on('keypress', escKeypress)
+    }
+  } else if (!sizeWarning.hidden) {
+    sizeWarning.hide()
     screen.off('keypress', escKeypress)
   }
 
-  userTable.options.columnWidth = [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100]
-  userTable.setData({
-    headers: ['Player', 'Served', 'Mistks', 'Blurred', 'Off', 'Standing'],
-    data: Array.from(state.sessions.metadata.entries()).map(([id, s]) => [
+  const selected = players.selected
+  players.setData(
+    [
+      ['Player', 'Served', 'Mistks', 'Blurred', 'Off', 'Standing']
+    ].concat(Array.from(state.sessions.metadata.entries()).map(([id, s]) => [
       s.name ?? '<unset>',
       s.sequencesServed.toString(),
       s.mistakes.toString(),
       Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(s.totalBlurTime / 1000) + 's',
       Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(s.totalOffTime / 1000) + 's',
       state.sessions.getStanding(id)
-    ])
-  })
-  userTable.children.find((c): c is blessed.Widgets.ListElement => c.type === 'list')!.select(NaN) // get rid of selected formatting
+    ]))
+  )
+
+  if (screen.focused === players) players.select(isNaN(selected) ? 1 : selected)
+  else players.select(NaN)
+
   screen.render()
 }, 500)
 
@@ -138,7 +161,7 @@ export function launch (): void {
   screen.render()
 }
 
-const components = [menu, log]
+const components = [menu, log, players]
 for (const component of components) {
   component.on('focus', () => {
     if (screen.focused === component && component.style.border.fg !== 'cyan') {
