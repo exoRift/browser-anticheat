@@ -1,4 +1,3 @@
-/* eslint-disable new-cap */
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
 import open from 'open'
@@ -13,8 +12,23 @@ export const screen = blessed.screen({
   smartCSR: true,
   title: 'Thor Anticheat'
 })
-export const grid = new contrib.grid({ screen, rows: 12, cols: 12, top: 3 })
-export const menu: ReturnType<typeof blessed.list> = grid.set(0, 0, 6, 4, blessed.list, {
+
+export const grid = blessed.box({
+  left: 0,
+  top: 3,
+  right: 0,
+  height: '100%-3'
+})
+screen.append(grid)
+
+export const menuBox = blessed.box({
+  width: '33%',
+  height: '50%',
+  left: 0,
+  right: 0
+})
+grid.append(menuBox)
+export const menu = blessed.list({
   label: ' {bold}Menu{/bold} ',
   tags: true,
   keys: true,
@@ -23,11 +37,16 @@ export const menu: ReturnType<typeof blessed.list> = grid.set(0, 0, 6, 4, blesse
   style: {
     selected: { bg: 'blue', fg: 'black' },
     border: { fg: 'white' }
-  }
-} satisfies Parameters<typeof blessed.list>[0])
-export const menuManager = new MenuManager(screen, menu, grid, [0, 0, 6, 4])
+  },
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0
+})
+menuBox.append(menu)
+export const menuManager = new MenuManager(screen, menu, menuBox)
 
-export const log: ReturnType<typeof blessed.log> = grid.set(6, 0, 5, 12, blessed.log, {
+export const log = blessed.log({
   label: ' {bold}Events{/bold} ',
   tags: true,
   keys: true,
@@ -39,11 +58,14 @@ export const log: ReturnType<typeof blessed.log> = grid.set(6, 0, 5, 12, blessed
   },
   scrollable: true,
   scrollback: 50,
+  left: 0,
+  right: 0,
+  top: '50%',
   bottom: 0
-} satisfies Parameters<typeof blessed.log>[0])
-log.height = undefined as any
+})
+grid.append(log)
 
-export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, contrib.table, {
+export const userTable = contrib.table({
   label: ' {bold}Players{/bold} ',
   tags: true,
   focusable: false,
@@ -56,9 +78,12 @@ export const userTable: ReturnType<typeof contrib.table> = grid.set(0, 4, 6, 8, 
   },
   columnSpacing: 1,
   columnWidth: [Math.round((screen.width as number) / 2) - 28, 7, 7, 8, 8, 100],
-  right: 0
-} satisfies Parameters<typeof contrib.table>[0])
-userTable.width = undefined as any
+  left: '33%',
+  top: 0,
+  right: 0,
+  height: '50%'
+})
+grid.append(userTable)
 
 const sizeWarning = blessed.box({
   top: 0,

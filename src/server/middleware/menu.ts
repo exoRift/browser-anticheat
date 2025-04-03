@@ -1,5 +1,4 @@
 import blessed from 'blessed'
-import type BlessedContrib from 'blessed-contrib'
 
 import { state } from './state.ts'
 
@@ -27,7 +26,7 @@ export const options: Option[] = [
     type: 'action',
     name: 'Set Password',
     action: (menu: MenuManager) => {
-      const input: ReturnType<typeof blessed.textbox> = menu.grid.set(menu.dims[0], menu.dims[1], 2, menu.dims[3], blessed.textbox, {
+      const input = blessed.textbox({
         border: {
           type: 'line'
         },
@@ -37,20 +36,29 @@ export const options: Option[] = [
             fg: 'cyan'
           }
         },
-        inputOnFocus: true
-      } satisfies Parameters<typeof blessed.textbox>[0])
-      input.height = 3
+        inputOnFocus: true,
+        top: 0,
+        height: 3,
+        left: 0,
+        right: 0
+      })
+      menu.box.append(input)
       if (state.passcode) input.setValue(state.passcode)
-      const placeholder: ReturnType<typeof blessed.text> = menu.grid.set(menu.dims[0], menu.dims[1], 2, menu.dims[3], blessed.text, {
+
+      const placeholder = blessed.text({
         style: {
           fg: 'gray'
         },
         inputOnFocus: true,
-        content: 'Enter Password Here'
-      } satisfies Parameters<typeof blessed.text>[0])
-      placeholder.height = 3
+        content: 'Enter Password Here',
+        top: 1,
+        left: 1,
+        right: 1,
+        height: 1
+      })
+      menu.box.append(placeholder)
 
-      const list: ReturnType<typeof blessed.list> = menu.grid.set(menu.dims[0], menu.dims[1], menu.dims[2], menu.dims[3], blessed.list, {
+      const list = blessed.list({
         items: ['Set Password', 'Clear Password', 'Cancel'],
         border: {
           type: 'line'
@@ -69,14 +77,13 @@ export const options: Option[] = [
             fg: 'black',
             bg: 'yellow'
           }
-        }
-      } satisfies Parameters<typeof blessed.list>[0])
-      list.top += '+6'
-      ;(list.position as any).height += '-3'
-
-      menu.screen.append(input)
-      menu.screen.append(list)
-      menu.screen.append(placeholder)
+        },
+        top: 3,
+        bottom: 0,
+        left: 0,
+        right: 0
+      })
+      menu.box.append(list)
 
       input.focus()
 
@@ -137,19 +144,17 @@ export const options: Option[] = [
 ]
 
 export class MenuManager {
-  private readonly component: ReturnType<typeof blessed.list>
   private activeMenu = ''
+  readonly list: ReturnType<typeof blessed.list>
   readonly screen: ReturnType<typeof blessed.screen>
-  readonly grid: BlessedContrib.grid
-  readonly dims: [row: number, col: number, rowSpan: number, colSpan: number]
+  readonly box: blessed.Widgets.Node
 
   locked = false
 
-  constructor (screen: ReturnType<typeof blessed.screen>, component: ReturnType<typeof blessed.list>, grid: BlessedContrib.grid, dims: [row: number, col: number, rowSpan: number, colSpan: number]) {
-    this.component = component
+  constructor (screen: ReturnType<typeof blessed.screen>, list: ReturnType<typeof blessed.list>, box: blessed.Widgets.Node) {
+    this.list = list
     this.screen = screen
-    this.grid = grid
-    this.dims = dims
+    this.box = box
     this.render()
     this.registerEvents()
   }
@@ -174,22 +179,22 @@ export class MenuManager {
   }
 
   drill (submenu: string): void {
-    this.component.select(0)
+    this.list.select(0)
     this.activeMenu += '.' + submenu
-    this.component.focus()
+    this.list.focus()
     this.render()
   }
 
   back (): void {
-    this.component.select(0)
+    this.list.select(0)
     this.activeMenu = this.activeMenu.slice(0, this.activeMenu.lastIndexOf('.'))
-    this.component.focus()
+    this.list.focus()
     this.render()
   }
 
   registerEvents (): void {
-    this.component.key('escape', () => this.back())
-    this.component.on('select', (item) => {
+    this.list.key('escape', () => this.back())
+    this.list.on('select', (item) => {
       const active = this.getOptions()
       const option = active.find((o) => o.name === item.getText())
       switch (option?.type) {
@@ -201,7 +206,7 @@ export class MenuManager {
 
   render (): void {
     const opts = this.getOptions()
-    this.component.setItems(opts.map((o) => o.name))
+    this.list.setItems(opts.map((o) => o.name))
     this.screen.render()
   }
 }
