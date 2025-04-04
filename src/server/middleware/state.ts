@@ -8,7 +8,7 @@ import type * as ws from 'ws'
 const CAPTCHA_WIDTH = 800
 const CAPTCHA_HEIGHT = 400
 const CAPTCHA_SIZE = 30
-const COLORS = ['deeppink', 'green']
+const COLORS = ['deeppink', 'orange', 'skyblue', 'mediumspringgreen', 'salmon']
 const CAPTCHA_CHARACTERS_LEFT = '1QAZ2WSX3EDC4RFV5TGB'
 const CAPTCHA_CHARACTERS_RIGHT = '6YHN7UJM8IK9OLP'
 const PING_THRESHOLD = 200
