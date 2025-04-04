@@ -25,8 +25,9 @@ export const options: Option[] = [
   {
     type: 'action',
     name: 'Set Password',
-    action: (menu: MenuManager) => {
+    action: (menu) => {
       const input = blessed.textbox({
+        parent: menu.box,
         border: {
           type: 'line'
         },
@@ -42,23 +43,24 @@ export const options: Option[] = [
         left: 0,
         right: 0
       })
-      menu.box.append(input)
       if (state.passcode) input.setValue(state.passcode)
 
       const placeholder = blessed.text({
+        parent: input,
         style: {
           fg: 'gray'
         },
         inputOnFocus: true,
         content: 'Enter Password Here',
-        top: 1,
-        left: 1,
-        right: 1,
-        height: 1
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 0
       })
-      menu.box.append(placeholder)
 
       const list = blessed.list({
+        parent: menu.box,
+        mouse: true,
         items: ['Set Password', 'Clear Password', 'Cancel'],
         border: {
           type: 'line'
@@ -83,38 +85,50 @@ export const options: Option[] = [
         left: 0,
         right: 0
       })
-      menu.box.append(list)
 
       input.focus()
 
-      function renderPlaceholder (key?: string): void {
-        const empty = (input.value.length === 1 && key === 'backspace') || (!input.value.length && (!key || (key.length > 1 && !['space', 'tab'].includes(key))))
+      function renderPlaceholder (): void {
+        const empty = !input.value.length
         if (empty) placeholder.show()
         else placeholder.hide()
       }
       renderPlaceholder()
 
+      function exit (): void {
+        input.destroy()
+        list.destroy()
+        placeholder.destroy()
+        menu.list.show()
+        menu.locked = false
+        menu.back()
+      }
+
+      list.on('select', (item) => {
+        switch (item.getText()) {
+          case 'Set Password': state.passcode = input.value; break
+          case 'Clear Password': state.passcode = null; break
+        }
+
+        exit()
+      })
+
       input.on('keypress', (ch, key) => {
         switch (key.name) {
           case 'up': list.up(1); break
           case 'down': list.down(1); break
-          case 'enter':
-            switch (list.getItem(list.selected).getText()) {
-              case 'Set Password': state.passcode = input.value; break
-              case 'Clear Password': state.passcode = null; break
-            }
-          case 'escape': /* eslint-disable-line no-fallthrough */
-            input.off('change', renderPlaceholder)
-            input.destroy()
-            list.destroy()
-            placeholder.destroy()
-            menu.back()
-            break
+          case 'enter': list.emit('select', list.getItem(list.selected), list.selected); break
+          case 'escape': exit(); break
         }
-        renderPlaceholder(key.name ?? key.ch)
+        setTimeout(() => {
+          renderPlaceholder()
+          menu.screen.render()
+        })
         menu.screen.render()
       })
 
+      menu.locked = true
+      menu.list.hide()
       menu.screen.render()
     }
   },
@@ -125,13 +139,158 @@ export const options: Option[] = [
       {
         type: 'action',
         name: 'Captcha Update Interval',
-        action: () => {
-          const input = blessed.input({
-            width: '50%',
-            height: '50%',
-            left: 'center',
-            top: 'center'
+        action: (menu) => {
+          let value = state.sessions.interval
+
+          const header = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 0,
+            left: 0,
+            right: 0,
+            bold: 'true',
+            content: 'Time in minutes'
           })
+
+          const inputBox = blessed.box({
+            parent: menu.box,
+            left: 'center',
+            width: '60%',
+            height: 1,
+            top: 1
+          })
+
+          const input = blessed.textbox({
+            parent: inputBox,
+            left: 3,
+            right: 3,
+            top: 0,
+            bottom: 0,
+            bg: 'white',
+            fg: 'black',
+            inputOnFocus: true
+          })
+
+          const left = blessed.button({
+            parent: inputBox,
+            content: '\u25c0',
+            mouse: true,
+            left: 0,
+            width: 2,
+            bg: 'gray'
+          })
+          const right = blessed.button({
+            parent: inputBox,
+            content: '\u25b6',
+            mouse: true,
+            right: 0,
+            width: 2,
+            bg: 'gray'
+          })
+          right.on('press', () => {
+            value += 60 * 1000
+            renderInput()
+          })
+          left.on('press', () => {
+            value -= 60 * 1000
+            renderInput()
+          })
+
+          const error = blessed.box({
+            parent: menu.box,
+            top: 2,
+            height: 2,
+            left: 0,
+            right: 0,
+            align: 'center',
+            content: 'Input must be a positive number',
+            fg: 'red'
+          })
+          error.hide()
+
+          const list = blessed.list({
+            parent: menu.box,
+            top: 4,
+            mouse: true,
+            border: {
+              type: 'line'
+            },
+            style: {
+              fg: 'white',
+              bg: 'black',
+              border: {
+                fg: 'cyan'
+              },
+              item: {
+                fg: 'white',
+                bg: 'black'
+              },
+              selected: {
+                fg: 'black',
+                bg: 'yellow'
+              }
+            },
+            items: [
+              'Save',
+              'Cancel'
+            ]
+          })
+
+          list.on('select', (item) => {
+            switch (item.getText()) {
+              case 'Save':
+                state.sessions.interval = value
+                break
+            }
+
+            header.destroy()
+            inputBox.destroy()
+            error.destroy()
+            list.destroy()
+            menu.list.show()
+            menu.locked = false
+            menu.back()
+          })
+
+          input.on('keypress', (ch, key) => {
+            switch (key.name) {
+              case 'left': left.press(); break
+              case 'right': right.press(); break
+              case 'up': list.up(1); break
+              case 'down': list.down(1); break
+              case 'enter': list.emit('select', list.getItem(list.selected), list.selected); break
+              case 'escape': list.emit('select', list.getItem(1), 1); break
+            }
+
+            setTimeout(() => {
+              const parsed = parseFloat(input.value)
+              if (isNaN(parsed) || parsed < 0) {
+                input.style.bg = 'red'
+                error.show()
+              } else {
+                input.style.bg = 'white'
+                error.hide()
+                value = parsed * 60 * 1000
+              }
+
+              menu.screen.render()
+            })
+          })
+
+          function renderInput (): void {
+            input.setValue((value / 60 / 1000).toString())
+            input.style.bg = 'white'
+            error.hide()
+            menu.screen.render()
+          }
+
+          renderInput()
+          // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
+          input.focus()
+          menu.locked = true
+          menu.list.hide()
+          menu.screen.render()
         }
       }
     ]

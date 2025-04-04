@@ -178,7 +178,7 @@ class SessionManager {
           break
         case 'BLUR':
           meta._heldKeys.clear()
-          console.log(`${meta.name} blurs the window`)
+          console.warn(`${meta.name} blurs the window`)
 
           if (meta._blurredSince === undefined) meta._blurredSince = Date.now()
           ++meta.totalBlurs
@@ -195,10 +195,14 @@ class SessionManager {
 
       if (captcha && ['DOWN', 'UP'].includes(command)) {
         if (meta._heldKeys.symmetricDifference(captcha.sequence).size) {
-          if (meta._offSince === undefined) meta._offSince = Date.now()
+          if (meta._offSince === undefined) {
+            meta._offSince = Date.now()
+            console.log(`${meta.name} breaks the captcha`)
+          }
         } else {
           if (meta._offSince !== undefined) meta._storedOffTime += Date.now() - meta._offSince
           meta._offSince = undefined
+          console.log(`${meta.name} completes the captcha`)
           socket.send('COMPLETE')
         }
       }
@@ -236,7 +240,7 @@ class SessionManager {
     if (!this.captchas.map.has(id) || !data || !this.sockets.has(id)) return '{gray-fg}DC\'d{/gray-fg}'
 
     if (data.totalInspects) return '{red-fg}CHEATING{/red-fg}'
-    if (data._blurredSince !== undefined) return '{red-fg}Blurred{/red-fg}'
+    if (data._blurredSince !== undefined) return '{bright-red-fg}Blurred{/bright-red-fg}'
     if (data.totalBlurTime > 10_000) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
     if (data.totalBlurs > 6) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'
     if (data.totalLatePings > 5) return '{yellow-fg}SUSPICIOUS{/yellow-fg}'

@@ -13,21 +13,22 @@ export const screen = blessed.screen({
 })
 
 export const grid = blessed.box({
+  parent: screen,
   left: 0,
   top: 3,
   right: 0,
   height: '100%-3'
 })
-screen.append(grid)
 
 export const menuBox = blessed.box({
+  parent: grid,
   width: '33%',
   height: '50%',
   left: 0,
   right: 0
 })
-grid.append(menuBox)
 export const menu = blessed.list({
+  parent: menuBox,
   label: ' {bold}Menu{/bold} ',
   tags: true,
   keys: true,
@@ -42,7 +43,6 @@ export const menu = blessed.list({
   right: 0,
   bottom: 0
 })
-menuBox.append(menu)
 export const menuManager = new MenuManager(screen, menu, menuBox)
 
 export const players = blessed.listtable({
@@ -53,6 +53,7 @@ export const players = blessed.listtable({
   clickable: true,
   noCellBorders: true,
   invertSelected: false,
+  pad: 1,
   border: { type: 'line' },
   style: {
     border: { fg: 'white' },
@@ -81,7 +82,65 @@ export const players = blessed.listtable({
   height: '50%'
 })
 
+players.on('select', (item, index) => {
+  if (index < 1) return
+  const [id, meta] = state.sessions.metadata.entries().drop(index - 1).next().value!
+
+  const box = blessed.box({
+    parent: screen,
+    border: { type: 'line' },
+    style: {
+      border: { fg: 'blue' }
+    }
+  })
+
+  function exit (): void {
+    box.hide()
+    players.focus()
+    setTimeout(() => box.destroy()) // UGLY: There's a crash if we don't defer the destruction
+    menuManager.locked = false
+    screen.render()
+  }
+
+  const list = blessed.listbar({
+    parent: box,
+    keys: true,
+    mouse: true,
+    autoCommandKeys: true,
+    style: {
+      selected: {
+        bg: 'yellow',
+        fg: 'black'
+      }
+    },
+    commands: {
+      'Reset Standing': () => {
+        meta._storedBlurTime = 0
+        meta._storedOffTime = 0
+        meta.mistakes = 0
+        meta.sequencesServed = 0
+        meta.totalDisconnects =
+        meta.totalInspects = 0
+        meta.totalLatePings = 0
+        exit()
+      },
+      Close: exit
+    } satisfies Record<string, () => void> as any,
+    items: undefined as any,
+    left: 'center',
+    width: 'shrink',
+    bottom: 1,
+    height: 1
+  })
+  list.select(1)
+
+  list.focus()
+  menuManager.locked = true
+  screen.render()
+})
+
 export const log = blessed.log({
+  parent: grid,
   label: ' {bold}Events{/bold} ',
   tags: true,
   keys: true,
@@ -92,15 +151,24 @@ export const log = blessed.log({
     border: { fg: 'white' }
   },
   scrollable: true,
-  scrollback: 50,
+  scrollback: 400,
+  scrollbar: {
+    ch: ' ',
+    track: {
+      bg: 'grey'
+    },
+    style: {
+      bg: 'blue'
+    }
+  },
   left: 0,
   right: 0,
   top: '50%',
   bottom: 0
 })
-grid.append(log)
 
 const sizeWarning = blessed.box({
+  parent: screen,
   top: 0,
   bottom: 0,
   right: 0,
@@ -112,7 +180,6 @@ const sizeWarning = blessed.box({
   content: 'Please increase your terminal size\nOr Press esc to exit'
 })
 sizeWarning.hide()
-screen.append(sizeWarning)
 
 function escKeypress (_: unknown, e: blessed.Widgets.Events.IKeyEventArg): void {
   if (e.name === 'escape') process.exit()
@@ -147,15 +214,31 @@ setInterval(() => {
   else players.select(NaN)
 
   screen.render()
-}, 500)
+}, 50)
 
+// TODO: delete
 screen.key('\'', () => process.exit()) // TEMP
 
 export function launch (): void {
-  console.log = (l: string) => log.log(l)
+  const ogLog = console.log
+  const ogError = console.error
+  const ogWarn = console.warn
 
-  // console.error = (...es) => es.forEach((e) => log.log(`{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
-  // console.warn = (...es) => es.forEach((e) => log.log(`{yellow-bg}{black-fg}${e}{/black-fg}{/yellow-bg}`))
+  let entries = 0
+  console.log = (l: string) => log.log(`${++entries}. ${l}`)
+
+  console.error = (...es) => es.forEach((e) => log.log(`${++entries}. {red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
+  console.warn = (...ws) => ws.forEach((w) => log.log(`${++entries}. {yellow-bg}{black-fg}${w}{/black-fg}{/yellow-bg}`))
+
+  process.once('uncaughtException', (err) => {
+    console.log = ogLog
+    console.error = ogError
+    console.warn = ogWarn
+
+    // TEMP
+    console.error(err.stack)
+    throw err
+  })
 
   menu.focus()
   screen.render()
@@ -183,6 +266,7 @@ screen.on('keypress', (k) => {
 type BlessedEvent = blessed.Widgets.Events.IMouseEventArg & blessed.Widgets.Events.IKeyEventArg
 
 const indicator: blessed.Widgets.TextElement & { ip?: string } = blessed.text({
+  parent: screen,
   border: { type: 'line' },
   tags: true,
   top: 0,
@@ -193,7 +277,6 @@ const indicator: blessed.Widgets.TextElement & { ip?: string } = blessed.text({
 indicator.on('click', (e: BlessedEvent) => {
   if (indicator.ip && e.x >= 13) void open(indicator.ip)
 })
-screen.append(indicator)
 export function indicateOnline (ip?: string | Error): void {
   if (ip) {
     if (ip instanceof Error) {
@@ -223,6 +306,5 @@ export function indicateOnline (ip?: string | Error): void {
     }
   }
 
-  indicator.render()
   screen.render()
 }

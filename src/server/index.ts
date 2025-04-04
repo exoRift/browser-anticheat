@@ -28,7 +28,7 @@ app
     httpOnly: false,
     maxAge: 8 * 60 * 60 * 1000,
     sameSite: 'strict',
-    signed: false // TODO: figure out why signing doesn't work
+    signed: false
   }))
   .use(stateMiddleware)
   .use(secure(['/profile', '/game'], '/', ['/'], '/profile'))
