@@ -12,11 +12,6 @@ import * as profile from './controllers/profile.ts'
 import * as connect from './controllers/connect.ts'
 import * as captcha from './controllers/captcha.ts'
 
-const {
-  PORT,
-  NODE_ENV
-} = process.env
-
 terminal.launch()
 terminal.indicateOnline()
 
@@ -46,7 +41,7 @@ app
   .all('/api/*', (req, res) => void res.sendStatus(404).end())
 
 // Attach frontend
-if (NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   app.use(express.static('build'))
 
   app.get('*', (req, res) => res.sendFile('index.html', { root: 'build' }))
@@ -67,9 +62,9 @@ if (NODE_ENV === 'production') {
 }
 
 // Listen
-app.listen(PORT, () => {
+app.listen(process.env.PORT, () => {
   fetch('https://api.ipify.org')
     .then((res) => res.text())
-    .then((ip) => terminal.indicateOnline(`http://${ip}:${PORT}`))
+    .then((ip) => terminal.indicateOnline(`http://${ip}:${process.env.PORT}`))
     .catch((err: Error) => terminal.indicateOnline(err))
 })

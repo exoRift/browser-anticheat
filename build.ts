@@ -30,7 +30,8 @@ const result = await Bun.build({
   plugins: [nobuildPlugin],
   minify: true,
   packages: 'external',
-  sourcemap: 'inline'
+  sourcemap: 'inline',
+  env: 'inline'
 })
 
 if (result.success) {
