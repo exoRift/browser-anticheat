@@ -222,10 +222,20 @@ players.on('select', (item, index) => {
     align: 'right',
     content: '# Late Pings: ' + meta.totalLatePings
   })
-  const disconnects = blessed.box({
+  const avgPing = blessed.box({
     parent: box,
     tags: true,
     top: 7,
+    right: 0,
+    width: 'shrink',
+    height: 1,
+    align: 'right',
+    content: 'Avg ping: {gray-fg}N/A{/gray-fg}'
+  })
+  const disconnects = blessed.box({
+    parent: box,
+    tags: true,
+    top: 8,
     right: 0,
     width: 'shrink',
     height: 1,
@@ -235,7 +245,7 @@ players.on('select', (item, index) => {
   const served = blessed.box({
     parent: box,
     tags: true,
-    top: 8,
+    top: 9,
     right: 0,
     width: 'shrink',
     height: 1,
@@ -245,7 +255,7 @@ players.on('select', (item, index) => {
   const mistakes = blessed.box({
     parent: box,
     tags: true,
-    top: 9,
+    top: 10,
     right: 0,
     width: 'shrink',
     height: 1,
@@ -259,6 +269,7 @@ players.on('select', (item, index) => {
     inspects.setContent(`# Devtools Opened: ${meta.totalInspects ? `{red-fg}${meta.totalInspects}{/red-fg}` : 0}`)
     blurs.setContent(`# Blurs: ${meta.totalBlurs ? `{yellow-fg}${meta.totalBlurs}{/yellow-fg}` : 0}`)
     latePings.setContent(`# Late Pings: ${meta.totalLatePings ? `{yellow-fg}${meta.totalLatePings}{/yellow-fg}` : 0}`)
+    avgPing.setContent(`Avg ping: ${meta.avgPing === undefined ? '{gray-fg}N/A{/gray-fg}' : `${NUMBER_FMT.format(meta.avgPing)}ms`}`)
     disconnects.setContent(`# Disconnects: ${meta.totalDisconnects}`)
     served.setContent(`# Served: ${meta.sequencesServed}`)
     mistakes.setContent(`# Mistakes: ${meta.mistakes}`)

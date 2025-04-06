@@ -36,6 +36,8 @@ interface SessionStats {
   _currentSequenceSince: number | undefined
   _lastPingSince: number | undefined
   totalLatePings: number
+  avgPing: number | undefined
+  _numPings: number
   totalDisconnects: number
 }
 
@@ -107,6 +109,8 @@ class SessionManager {
       _currentSequenceSince: undefined,
       _lastPingSince: undefined,
       totalLatePings: 0,
+      avgPing: undefined,
+      _numPings: 0,
       totalDisconnects: 0
     })
   }
@@ -147,8 +151,12 @@ class SessionManager {
       meta._lastPingSince = Date.now()
       socket.once('pong', () => {
         if (meta._lastPingSince === undefined) return
-        console.debug('pong', Date.now() - meta._lastPingSince)
-        if (Date.now() - meta._lastPingSince > state.pingThreshold) {
+        const latency = Date.now() - meta._lastPingSince
+        meta.avgPing = meta.avgPing === undefined
+          ? latency
+          : ((meta.avgPing * meta._numPings) + latency) / ++meta._numPings
+
+        if (latency > state.pingThreshold) {
           ++meta.totalLatePings
           console.warn(`${meta.name} pinged late!`)
         }

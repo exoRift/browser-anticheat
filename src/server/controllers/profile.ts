@@ -19,12 +19,18 @@ export const get: Handler = function get (req, res) {
 export const post: Handler = function post (req, res) {
   if (!req.session) return void res.status(500).send('Session is null when it should not be').end()
 
-  if (req.body.name) {
+  if (typeof req.body.name === 'string') {
+    const name: string = req.body.name.trim()
     const meta = req.state.sessions.metadata.get(req.session.id)
+
+    const nameTaken = req.state.sessions.metadata.values().some((s) => s !== meta && s.name === name)
+    if (nameTaken) return res.redirect(`/profile?nametaken=${encodeURIComponent(name)}`)
+
     if (meta) {
-      meta.name = req.body.name
+      meta.name = name
       console.log(`${req.session.id} changes name to ${meta.name}`)
     }
   }
+
   res.redirect('/profile')
 }
