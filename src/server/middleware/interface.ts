@@ -311,6 +311,12 @@ players.on('select', (item, index) => {
       }
     },
     commands: {
+      ' Kick Player': () => {
+        console.log(`${meta.name ?? id} is kicked`)
+        void state.sessions.kick(id)
+
+        exit()
+      },
       ' Reset Standing': () => {
         meta._storedBlurTime = 0
         meta._storedOffTime = 0
@@ -325,11 +331,11 @@ players.on('select', (item, index) => {
     } satisfies Record<string, () => void> as any,
     items: undefined as any,
     left: 'center',
-    width: 'shrink',
+    width: 51,
     bottom: 1,
     height: 1
   })
-  list.select(1)
+  list.select(2)
 
   screen.key('escape', exit)
 
@@ -464,8 +470,8 @@ for (const component of components) {
     }
   })
 }
-screen.key('tab', (_, key) => {
-  if (!menuManager.locked) {
+screen.on('keypress', (_, key) => {
+  if (!menuManager.locked && key.name === 'tab') {
     if (key.shift) screen.focusPrevious()
     else screen.focusNext()
   }

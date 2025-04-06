@@ -44,7 +44,7 @@ app
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('build'))
 
-  app.get('*', (req, res) => res.sendFile('index.html', { root: 'build' }))
+  app.get('*', (req, res) => res.sendFile('index.html', { root: 'build/' }))
 } else {
   // @bun nobuild[
   const { createServer: createViteServer } = await import('vite')

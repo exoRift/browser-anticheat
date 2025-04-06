@@ -12,8 +12,6 @@ declare global {
     interface CookieSessionObject {
       id: string
       valid: boolean
-      name?: string
-      joinedAt: string
     }
   }
 

@@ -88,7 +88,7 @@ export default function Game (): React.ReactNode {
     }, { once: true })
 
     connection.current.addEventListener('close', () => {
-      setError('The connection has been closed')
+      setError((prior) => prior ?? 'The connection has been closed')
     }, { once: true })
   }, [])
 

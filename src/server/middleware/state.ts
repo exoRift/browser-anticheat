@@ -19,7 +19,7 @@ process.once('exit', () => rmSync(CAPTCHA_PATH, { recursive: true }))
 
 interface SessionStats {
   name?: string
-  joinedAt: string
+  joinedAt: number
   sequencesServed: number
   mistakes: number
   _storedBlurTime: number
@@ -61,7 +61,7 @@ class SessionManager {
   add (session: Session): void {
     this.metadata.set(session.id, {
       name: session.name,
-      joinedAt: session.joinedAt,
+      joinedAt: Date.now(),
       sequencesServed: 0,
       mistakes: 0,
       _storedBlurTime: 0,
@@ -253,6 +253,15 @@ class SessionManager {
 
     return '{green-fg}Good{/green-fg}'
   }
+
+  kick (id: string): Promise<void> {
+    const socket = state.sessions.sockets.get(id)
+    socket?.send('ERROR:You\'ve been kicked by the host')
+    socket?.close()
+    this.sockets.delete(id)
+    this.metadata.delete(id)
+    return this.captchas.removeCaptcha(id)
+  }
 }
 
 interface Captcha {
@@ -307,6 +316,12 @@ class CaptchaManager {
     }
     this.map.set(sessionID, obj)
     return obj
+  }
+
+  async removeCaptcha (sessionID: string): Promise<void> {
+    const captcha = this.map.get(sessionID)
+
+    if (captcha) return await fs.unlink(path.resolve(CAPTCHA_PATH, captcha.id + '.png'))
   }
 }
 

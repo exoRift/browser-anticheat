@@ -1,3 +1,3 @@
 import { config } from 'eslint-config'
 
-export default config()
+export default config(['build/'])
