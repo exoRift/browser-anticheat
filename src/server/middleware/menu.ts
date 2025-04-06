@@ -140,7 +140,7 @@ export const options: Option[] = [
         type: 'action',
         name: 'Captcha Update Interval',
         action: (menu) => {
-          let value = state.sessions.interval
+          let value = state.captchaInterval
 
           const header = blessed.box({
             parent: menu.box,
@@ -240,7 +240,7 @@ export const options: Option[] = [
           list.on('select', (item) => {
             switch (item.getText()) {
               case 'Save':
-                state.sessions.interval = value
+                state.captchaInterval = value
                 break
             }
 

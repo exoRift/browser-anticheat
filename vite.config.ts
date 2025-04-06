@@ -21,5 +21,9 @@ export default defineConfig({
   ],
   build: {
     outDir: 'build/'
-  }
+  },
+  server: {
+    allowedHosts: true
+  },
+  clearScreen: false
 })

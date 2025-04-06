@@ -11,7 +11,6 @@ const CAPTCHA_SIZE = 30
 const COLORS = ['deeppink', 'orange', 'skyblue', 'mediumspringgreen', 'salmon']
 const CAPTCHA_CHARACTERS_LEFT = '1QAZ2WSX3EDC4RFV5TGB'
 const CAPTCHA_CHARACTERS_RIGHT = '6YHN7UJM8IK9OLP'
-const PING_THRESHOLD = 200
 export const CAPTCHA_PATH = path.resolve(process.cwd(), '_captchas/')
 
 const dirPromise = fs.mkdir(CAPTCHA_PATH, { recursive: true })
@@ -43,6 +42,11 @@ interface SessionStats {
 interface State {
   sessions: SessionManager
   passcode: string | null
+  captchaInterval: number
+  pingInterval: number
+  pingThreshold: number
+  captchaMinCharacters: number
+  captchaMaxCharacters: number
 }
 
 declare module 'express-serve-static-core' {
@@ -51,12 +55,31 @@ declare module 'express-serve-static-core' {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+class SecureRandom {
+  static POOL_SIZE = 64
+  static pool = new Uint32Array(this.POOL_SIZE)
+  static index = this.pool.length - 1
+  static randomFloat (): number {
+    if (this.index >= this.pool.length - 1) {
+      crypto.getRandomValues(this.pool)
+      this.index = 0
+    }
+
+    return this.pool[this.index++] / 0xFFFFFFFF
+  }
+
+  static randomInt (min: number, max: number): number {
+    return Math.round(this.randomFloat() * (max - min) + min)
+  }
+}
+
 class SessionManager {
-  interval = 10 * 60 * 1000 /* 10 minutes */
-  metadata = new Map<string, SessionStats>()
-  intervals = new Map<string, Timer>()
-  captchas = new CaptchaManager()
-  sockets = new Map<string, ws.WebSocket>()
+  private readonly captchaTimeouts = new Map<string, Timer>()
+  private readonly pingIntervals = new Map<string, Timer>()
+  private readonly captchas = new CaptchaManager()
+  private readonly sockets = new Map<string, ws.WebSocket>()
+  readonly metadata = new Map<string, SessionStats>()
 
   add (session: Session): void {
     this.metadata.set(session.id, {
@@ -92,6 +115,8 @@ class SessionManager {
     this.sockets.set(session.id, socket)
     socket.once('close', () => {
       this.sockets.delete(session.id)
+      clearInterval(this.pingIntervals.get(session.id))
+      this.pingIntervals.delete(session.id)
       const meta = this.metadata.get(session.id)
 
       meta?._heldKeys.clear()
@@ -109,26 +134,34 @@ class SessionManager {
       console.warn(`${meta?.name ?? session.id} disconnects`)
     })
 
-    socket.on('ping', () => {
+    this.pingIntervals.set(session.id, setInterval(() => {
       const meta = this.metadata.get(session.id)
       if (!meta) {
-        socket.terminate()
+        clearInterval(this.pingIntervals.get(session.id))
+        this.pingIntervals.delete(session.id)
         return
       }
+      if (meta._lastPingSince !== undefined) return
 
-      if (meta._lastPingSince !== undefined && Date.now() - meta._lastPingSince > PING_THRESHOLD) {
-        ++meta.totalLatePings
-        console.warn(`${meta.name} pinged late!`)
-      }
+      socket.ping()
       meta._lastPingSince = Date.now()
-    })
+      socket.once('pong', () => {
+        if (meta._lastPingSince === undefined) return
+        if (Date.now() - meta._lastPingSince > state.pingThreshold) {
+          ++meta.totalLatePings
+          console.warn(`${meta.name} pinged late!`)
+        }
+
+        meta._lastPingSince = undefined
+      })
+    }, state.pingInterval))
 
     socket.on('message', (msg) => {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const [command, data] = msg.toString().split(':')
 
       const meta = this.metadata.get(session.id)
-      const captcha = this.captchas.map.get(session.id)
+      const captcha = this.captchas.assigned.get(session.id)
       if (!meta) {
         socket.terminate()
         return
@@ -210,13 +243,17 @@ class SessionManager {
   }
 
   async generateNewSequenceForSession (session: Session): Promise<void> {
-    clearTimeout(this.intervals.get(session.id))
+    clearTimeout(this.captchaTimeouts.get(session.id))
     const data = this.metadata.get(session.id)
     const socket = this.sockets.get(session.id)
-    if (!data || !socket) return
 
-    const oldCaptchaID = this.captchas.map.get(session.id)
+    const oldCaptchaID = this.captchas.assigned.get(session.id)
     if (oldCaptchaID) void fs.unlink(path.resolve(CAPTCHA_PATH, oldCaptchaID.id + '.png'))
+
+    if (!data || !socket) {
+      this.captchas.assigned.delete(session.id)
+      return
+    }
 
     const captcha = await this.captchas.generateCaptcha(session.id)
     ++data.sequencesServed
@@ -224,10 +261,10 @@ class SessionManager {
     data._currentSequenceSince = Date.now()
     socket.send('SEQUENCE:' + captcha.id)
 
-    this.intervals.set(session.id, setTimeout(() => {
+    this.captchaTimeouts.set(session.id, setTimeout(() => {
       console.log('Auto-generating a new captcha for ' + (data.name ?? session.id))
       void this.generateNewSequenceForSession(session)
-    }, this.interval))
+    }, state.captchaInterval))
   }
 
   /**
@@ -237,7 +274,7 @@ class SessionManager {
    */
   getStanding (id: string): string {
     const data = this.metadata.get(id)
-    if (!this.captchas.map.has(id) || !data || !this.sockets.has(id)) return '{gray-fg}DC\'d{/gray-fg}'
+    if (!this.captchas.assigned.has(id) || !data || !this.sockets.has(id)) return '{gray-fg}DC\'d{/gray-fg}'
 
     if (data.totalInspects) return '{red-fg}CHEATING{/red-fg}'
     if (data._blurredSince !== undefined) return '{bright-red-fg}Blurred{/bright-red-fg}'
@@ -255,11 +292,13 @@ class SessionManager {
   }
 
   kick (id: string): Promise<void> {
-    const socket = state.sessions.sockets.get(id)
+    const socket = this.sockets.get(id)
     socket?.send('ERROR:You\'ve been kicked by the host')
     socket?.close()
     this.sockets.delete(id)
     this.metadata.delete(id)
+    clearTimeout(this.captchaTimeouts.get(id))
+    this.captchaTimeouts.delete(id)
     return this.captchas.removeCaptcha(id)
   }
 }
@@ -269,14 +308,16 @@ interface Captcha {
   sequence: Set<string>
 }
 class CaptchaManager {
-  map = new Map<string, Captcha>()
+  /** Captchas assigned to players */
+  readonly assigned = new Map<string, Captcha>()
 
   static generateSequence (): Set<string> {
-    const numKeys = Math.round(Math.random() * 2 + 4)
+    const numKeys = SecureRandom.randomInt(state.captchaMinCharacters, state.captchaMaxCharacters)
     const sequence = new Set<string>()
     while (sequence.size < numKeys) {
-      const characterPool = Math.random() > 0.5 ? CAPTCHA_CHARACTERS_LEFT : CAPTCHA_CHARACTERS_RIGHT
-      const char = characterPool[Math.round(Math.random() * (characterPool.length - 1))]
+      const characterPool = SecureRandom.randomFloat() > 0.5 ? CAPTCHA_CHARACTERS_LEFT : CAPTCHA_CHARACTERS_RIGHT
+
+      const char = characterPool[SecureRandom.randomInt(0, characterPool.length - 1)]
 
       sequence.add(char)
     }
@@ -314,20 +355,28 @@ class CaptchaManager {
       sequence,
       id
     }
-    this.map.set(sessionID, obj)
+    this.assigned.set(sessionID, obj)
     return obj
   }
 
   async removeCaptcha (sessionID: string): Promise<void> {
-    const captcha = this.map.get(sessionID)
+    const captcha = this.assigned.get(sessionID)
 
-    if (captcha) return await fs.unlink(path.resolve(CAPTCHA_PATH, captcha.id + '.png'))
+    if (captcha) {
+      this.assigned.delete(sessionID)
+      return await fs.unlink(path.resolve(CAPTCHA_PATH, captcha.id + '.png'))
+    }
   }
 }
 
 export const state: State = {
   sessions: new SessionManager(),
-  passcode: null
+  passcode: null,
+  captchaInterval: 10 * 60 * 1000, /* 10 minutes */
+  captchaMinCharacters: 4,
+  captchaMaxCharacters: 6,
+  pingInterval: 2000,
+  pingThreshold: 1000
 }
 
 export const middleware: Handler = function middleware (req, res, next): void {
