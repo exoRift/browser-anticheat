@@ -276,22 +276,24 @@ players.on('select', (item, index) => {
 
     offtimes.setData(
       [
-        ['Prior Total', 'Current Time', 'Total']
-      ].concat(Array.from(state.sessions.metadata.values()).map((s) => [
-        `${NUMBER_FMT.format(s._storedOffTime / 1000)}s`,
-        s._offSince === undefined ? '{gray-fg}N/A{/gray-fg}' : `${NUMBER_FMT.format((Date.now() - s._offSince) / 1000)}s`,
-        `${NUMBER_FMT.format(s.totalOffTime / 1000)}s`
-      ]))
+        ['Prior Total', 'Current Time', 'Total'],
+        [
+          `${NUMBER_FMT.format(meta._storedOffTime / 1000)}s`,
+          meta._offSince === undefined ? '{gray-fg}N/A{/gray-fg}' : `${NUMBER_FMT.format((Date.now() - meta._offSince) / 1000)}s`,
+          `${NUMBER_FMT.format(meta.totalOffTime / 1000)}s`
+        ]
+      ]
     )
 
     blurtimes.setData(
       [
-        ['Prior Total', 'Current Time', 'Total']
-      ].concat(Array.from(state.sessions.metadata.values()).map((s) => [
-        `${NUMBER_FMT.format(s._storedBlurTime / 1000)}s`,
-        s._blurredSince === undefined ? '{gray-fg}N/A{/gray-fg}' : `${NUMBER_FMT.format((Date.now() - s._blurredSince) / 1000)}s`,
-        `${NUMBER_FMT.format(s.totalBlurTime / 1000)}s`
-      ]))
+        ['Prior Total', 'Current Time', 'Total'],
+        [
+          `${NUMBER_FMT.format(meta._storedBlurTime / 1000)}s`,
+          meta._blurredSince === undefined ? '{gray-fg}N/A{/gray-fg}' : `${NUMBER_FMT.format((Date.now() - meta._blurredSince) / 1000)}s`,
+          `${NUMBER_FMT.format(meta.totalBlurTime / 1000)}s`
+        ]
+      ]
     )
 
     screen.render()
@@ -307,6 +309,7 @@ players.on('select', (item, index) => {
     players.focus()
     setTimeout(() => box.destroy()) // UGLY: There's a crash if we don't defer the destruction
     menuManager.locked = false
+    players.select(index)
     screen.render()
   }
 

@@ -2,7 +2,9 @@
 @import './icons.css';
 @import './fonts.css';
 
-@plugin 'daisyui';
+@plugin 'daisyui' {
+  logs: false;
+}
 @plugin "daisyui/theme" {
   name: "night";
   default: true;

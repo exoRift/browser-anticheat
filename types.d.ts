@@ -7,6 +7,14 @@ declare module 'express-serve-static-core' {
   interface Application extends expressWs.Router {}
 }
 
+declare module 'blessed' {
+  export namespace Widgets {
+    interface ListElement {
+      selected: number
+    }
+  }
+}
+
 declare global {
   namespace CookieSessionInterfaces {
     interface CookieSessionObject {

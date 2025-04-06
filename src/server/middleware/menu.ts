@@ -1,15 +1,7 @@
 import blessed from 'blessed'
 
+import { numberInput } from '../components/number_input.ts'
 import { state } from './state.ts'
-
-declare module 'blessed' {
-  /* eslint-disable-next-line @typescript-eslint/no-namespace */
-  export namespace Widgets {
-    interface ListElement {
-      selected: number
-    }
-  }
-}
 
 export type Option = {
   type: 'action'
@@ -101,7 +93,7 @@ export const options: Option[] = [
         placeholder.destroy()
         menu.list.show()
         menu.locked = false
-        menu.back()
+        menu.list.focus()
       }
 
       list.on('select', (item) => {
@@ -140,8 +132,6 @@ export const options: Option[] = [
         type: 'action',
         name: 'Captcha Update Interval',
         action: (menu) => {
-          let value = state.captchaInterval
-
           const header = blessed.box({
             parent: menu.box,
             align: 'center',
@@ -149,143 +139,214 @@ export const options: Option[] = [
             top: 0,
             left: 0,
             right: 0,
+            fg: 'blue',
+            content: 'Captcha Update Interval'
+          })
+
+          const unit = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 1,
+            left: 0,
+            right: 0,
             bold: 'true',
             content: 'Time in minutes'
           })
 
-          const inputBox = blessed.box({
-            parent: menu.box,
-            left: 'center',
-            width: '60%',
-            height: 1,
-            top: 1
-          })
-
-          const input = blessed.textbox({
-            parent: inputBox,
-            left: 3,
-            right: 3,
-            top: 0,
-            bottom: 0,
-            bg: 'white',
-            fg: 'black',
-            inputOnFocus: true
-          })
-
-          const left = blessed.button({
-            parent: inputBox,
-            content: '\u25c0',
-            mouse: true,
-            left: 0,
-            width: 2,
-            bg: 'gray'
-          })
-          const right = blessed.button({
-            parent: inputBox,
-            content: '\u25b6',
-            mouse: true,
-            right: 0,
-            width: 2,
-            bg: 'gray'
-          })
-          right.on('press', () => {
-            value += 60 * 1000
-            renderInput()
-          })
-          left.on('press', () => {
-            value -= 60 * 1000
-            renderInput()
-          })
-
-          const error = blessed.box({
+          const [box, input] = numberInput({
             parent: menu.box,
             top: 2,
-            height: 2,
+            value: state.captchaInterval / 60_000,
+            forcePositive: true,
+            onExit: (v) => {
+              if (v !== undefined) state.captchaInterval = v * 60_000
+
+              header.destroy()
+              unit.destroy()
+              box.destroy()
+              menu.list.show()
+              menu.locked = false
+              menu.list.focus()
+            }
+          })
+
+          // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
+          input.focus()
+          menu.locked = true
+          menu.list.hide()
+          menu.screen.render()
+        }
+      },
+      {
+        type: 'action',
+        name: 'Captcha Minimum Characters',
+        action: (menu) => {
+          const header = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 0,
             left: 0,
             right: 0,
-            align: 'center',
-            content: 'Input must be a positive number',
-            fg: 'red'
+            fg: 'blue',
+            content: 'Captcha Minimum Characters'
           })
-          error.hide()
 
-          const list = blessed.list({
+          const [box, input] = numberInput({
             parent: menu.box,
-            top: 4,
-            mouse: true,
-            border: {
-              type: 'line'
-            },
-            style: {
-              fg: 'white',
-              bg: 'black',
-              border: {
-                fg: 'cyan'
-              },
-              item: {
-                fg: 'white',
-                bg: 'black'
-              },
-              selected: {
-                fg: 'black',
-                bg: 'yellow'
-              }
-            },
-            items: [
-              'Save',
-              'Cancel'
-            ]
-          })
+            top: 1,
+            value: state.captchaMinCharacters,
+            forcePositive: true,
+            onExit: (v) => {
+              if (v !== undefined) state.captchaMinCharacters = Math.round(v)
 
-          list.on('select', (item) => {
-            switch (item.getText()) {
-              case 'Save':
-                state.captchaInterval = value
-                break
+              header.destroy()
+              box.destroy()
+              menu.list.show()
+              menu.locked = false
+              menu.list.focus()
             }
-
-            header.destroy()
-            inputBox.destroy()
-            error.destroy()
-            list.destroy()
-            menu.list.show()
-            menu.locked = false
-            menu.back()
           })
 
-          input.on('keypress', (ch, key) => {
-            switch (key.name) {
-              case 'left': left.press(); break
-              case 'right': right.press(); break
-              case 'up': list.up(1); break
-              case 'down': list.down(1); break
-              case 'enter': list.emit('select', list.getItem(list.selected), list.selected); break
-              case 'escape': list.emit('select', list.getItem(1), 1); break
+          // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
+          input.focus()
+          menu.locked = true
+          menu.list.hide()
+          menu.screen.render()
+        }
+      },
+      {
+        type: 'action',
+        name: 'Captcha Maximum Characters',
+        action: (menu) => {
+          const header = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 0,
+            left: 0,
+            right: 0,
+            fg: 'blue',
+            content: 'Captcha Maximum Characters'
+          })
+
+          const [box, input] = numberInput({
+            parent: menu.box,
+            top: 1,
+            value: state.captchaMaxCharacters,
+            forcePositive: true,
+            onExit: (v) => {
+              if (v !== undefined) state.captchaMaxCharacters = Math.round(v)
+
+              header.destroy()
+              box.destroy()
+              menu.list.show()
+              menu.locked = false
+              menu.list.focus()
             }
-
-            setTimeout(() => {
-              const parsed = parseFloat(input.value)
-              if (isNaN(parsed) || parsed < 0) {
-                input.style.bg = 'red'
-                error.show()
-              } else {
-                input.style.bg = 'white'
-                error.hide()
-                value = parsed * 60 * 1000
-              }
-
-              menu.screen.render()
-            })
           })
 
-          function renderInput (): void {
-            input.setValue((value / 60 / 1000).toString())
-            input.style.bg = 'white'
-            error.hide()
-            menu.screen.render()
-          }
+          // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
+          input.focus()
+          menu.locked = true
+          menu.list.hide()
+          menu.screen.render()
+        }
+      },
+      {
+        type: 'action',
+        name: 'Ping Interval',
+        action: (menu) => {
+          const header = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 0,
+            left: 0,
+            right: 0,
+            fg: 'blue',
+            content: 'Ping Interval'
+          })
 
-          renderInput()
+          const unit = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 1,
+            left: 0,
+            right: 0,
+            bold: 'true',
+            content: 'Time in seconds'
+          })
+
+          const [box, input] = numberInput({
+            parent: menu.box,
+            top: 2,
+            value: state.pingInterval / 1000,
+            forcePositive: true,
+            onExit: (v) => {
+              if (v !== undefined) state.pingInterval = v * 1000
+
+              header.destroy()
+              unit.destroy()
+              box.destroy()
+              menu.list.show()
+              menu.locked = false
+              menu.list.focus()
+            }
+          })
+
+          // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
+          input.focus()
+          menu.locked = true
+          menu.list.hide()
+          menu.screen.render()
+        }
+      },
+      {
+        type: 'action',
+        name: 'Ping Threshold',
+        action: (menu) => {
+          const header = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 0,
+            left: 0,
+            right: 0,
+            fg: 'blue',
+            content: 'Ping Threshold'
+          })
+
+          const unit = blessed.box({
+            parent: menu.box,
+            align: 'center',
+            height: 1,
+            top: 1,
+            left: 0,
+            right: 0,
+            bold: 'true',
+            content: 'Time in seconds'
+          })
+
+          const [box, input] = numberInput({
+            parent: menu.box,
+            top: 2,
+            value: state.pingThreshold / 1000,
+            forcePositive: true,
+            onExit: (v) => {
+              if (v !== undefined) state.pingThreshold = v * 1000
+
+              header.destroy()
+              unit.destroy()
+              box.destroy()
+              menu.list.show()
+              menu.locked = false
+              menu.list.focus()
+            }
+          })
+
           // WARN: input.focus() MUST be before list.hide() because for some reason if not, the list isn't focused when shown on back
           input.focus()
           menu.locked = true
