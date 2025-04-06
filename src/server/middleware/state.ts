@@ -147,6 +147,7 @@ class SessionManager {
       meta._lastPingSince = Date.now()
       socket.once('pong', () => {
         if (meta._lastPingSince === undefined) return
+        console.debug('pong', Date.now() - meta._lastPingSince)
         if (Date.now() - meta._lastPingSince > state.pingThreshold) {
           ++meta.totalLatePings
           console.warn(`${meta.name} pinged late!`)
@@ -375,8 +376,8 @@ export const state: State = {
   captchaInterval: 10 * 60 * 1000, /* 10 minutes */
   captchaMinCharacters: 4,
   captchaMaxCharacters: 6,
-  pingInterval: 2000,
-  pingThreshold: 1000
+  pingInterval: 1000,
+  pingThreshold: 400
 }
 
 export const middleware: Handler = function middleware (req, res, next): void {

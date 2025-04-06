@@ -437,6 +437,10 @@ export function launch (): void {
 
   let entries = 0
   console.log = (...ls) => ls.forEach((l) => log.log(`${++entries}.`.padEnd(5) + l))
+  // @bun nobuild[
+  // eslint-disable-next-line no-console
+  console.debug = (...ds) => ds.forEach((d) => log.log(`${++entries}.`.padEnd(5) + `{magenta-bg}{black-fg}${d}{/black-fg}{/magenta-bg}`))
+  // @bun nobuild]
 
   console.error = (...es) => es.forEach((e) => log.log(`${++entries}.`.padEnd(5) + `{red-bg}{black-fg}${e}{/black-fg}{/red-bg}`))
   console.warn = (...ws) => ws.forEach((w) => log.log(`${++entries}.`.padEnd(5) + `{yellow-bg}{black-fg}${w}{/black-fg}{/yellow-bg}`))

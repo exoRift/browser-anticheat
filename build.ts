@@ -31,7 +31,8 @@ const result = await Bun.build({
   minify: true,
   packages: 'external',
   sourcemap: 'inline',
-  env: 'inline'
+  env: 'inline',
+  drop: ['console.debug']
 })
 
 if (result.success) {
