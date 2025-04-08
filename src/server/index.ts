@@ -64,23 +64,25 @@ terminal.engageSizeGuard()
 void terminal.promptBootScreen()
   .then((method) => {
     terminal.launch()
-    // terminal.indicateOnline()
+    terminal.indicateOnline()
 
     // Listen
     const server = app.listen(method.type === 'classic' ? method.port : 0, (err) => {
-      console.error(err)
+      if (err) terminal.indicateOnline(err)
+      else {
+        const port = (server.address() as Exclude<ReturnType<typeof server.address>, string | null>).port
 
-      if (method.type === 'tunnel') {
-        localtunnel({
-          port: (server.address() as Exclude<ReturnType<typeof server.address>, string | null>).port,
-          subdomain: method.subdomain
-        })
-          .then(() => {
-            console.log('bruh')
+        if (method.type === 'tunnel') {
+          localtunnel({
+            port,
+            subdomain: method.subdomain
           })
-          .catch((err) => {
-            console.error(err)
-          })
+            .then((tunnel) => terminal.indicateOnline({
+              type: 'tunnel',
+              address: tunnel.url
+            }))
+            .catch((err) => terminal.indicateOnline(err))
+        } else terminal.indicateOnline({ type: 'classic', port })
       }
     })
   })

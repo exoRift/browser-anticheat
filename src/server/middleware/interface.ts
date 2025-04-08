@@ -28,17 +28,6 @@ for (const interf in interfaces) {
 const publicip = fetch('https://api.ipify.org')
   .then((res) => res.text())
 
-function lanAddress (port: number): string {
-  return `Your server is available on LAN at: [${localip}:${port}](http://${localip}:${port})`
-}
-
-function publicAddress (port: number): string {
-  const ip = Bun.peek(publicip)
-  if (ip instanceof Promise) return 'Loading public IP...'
-
-  return `Your server is available publicly at [${ip}:${port}](http://${ip}:${port})`
-}
-
 export function deferredDestroy (node: blessed.Widgets.Node): void {
   setTimeout(() => {
     node.destroy()
@@ -566,51 +555,149 @@ export function launch (): void {
   screen.render()
 }
 
-type BlessedEvent = blessed.Widgets.Events.IMouseEventArg & blessed.Widgets.Events.IKeyEventArg
+const indicator = blessed.box({
+  parent: screen,
+  tags: true,
+  top: 0,
+  left: 0,
+  right: 0,
+  height: 3,
+  border: 'line',
+  style: {
+    border: { fg: 'white' }
+  },
+  label: ' {bold}Status{/bold} '
+})
 
-// const indicator: blessed.Widgets.TextElement & { ip?: string } = blessed.text({
-//   parent: screen,
-//   border: { type: 'line' },
-//   tags: true,
-//   top: 0,
-//   left: 0,
-//   right: 0,
-//   height: 3
-// })
-// indicator.on('click', (e: BlessedEvent) => {
-//   if (indicator.ip && e.x >= 13) void open(indicator.ip)
-// })
-// export function indicateOnline (ip?: string | Error): void {
-//   if (ip) {
-//     if (ip instanceof Error) {
-//       indicator.ip = undefined
-//       indicator.setLabel(' {bold}Status{/bold} ')
-//       indicator.setContent(`{bold}ERROR{/bold} - ${ip.message}`)
-//       indicator.style = {
-//         fg: 'red',
-//         border: { fg: 'white' }
-//       }
-//     } else {
-//       indicator.ip = ip
-//       indicator.setLabel(' {bold}Status{/bold} ')
-//       indicator.setContent(`{bold}ONLINE{/bold}. IP: {underline}${ip}{/underline}`)
-//       indicator.style = {
-//         fg: 'green',
-//         border: { fg: 'white' }
-//       }
-//     }
-//   } else {
-//     indicator.ip = undefined
-//     indicator.setLabel(' {bold}Status{/bold} ')
-//     indicator.setContent('{bold}OFFLINE{/bold}')
-//     indicator.style = {
-//       fg: 'gray',
-//       border: { fg: 'white' }
-//     }
-//   }
+type Status = {
+  type: 'tunnel'
+  address: string
+} | {
+  type: 'classic'
+  port: number
+}
+export function indicateOnline (status?: Status | Error): void {
+  indicator.forDescendants((d) => d.destroy(), false)
 
-//   screen.render()
-// }
+  function lanAddress (port: number): string {
+    return `http://${localip}:${port}`
+  }
+
+  function publicAddress (port: number): string {
+    const ip = Bun.peek(publicip)
+    if (ip instanceof Promise) return 'Loading public IP...'
+
+    return `http://${ip}:${port}`
+  }
+
+  if (status) {
+    if (status instanceof Error) {
+      blessed.text({
+        parent: indicator,
+        tags: true,
+        content: `{bold}ERROR{/bold} - ${status.message}`,
+        fg: 'red'
+      })
+    } else {
+      blessed.text({
+        parent: indicator,
+        tags: true,
+        content: '{bold}ONLINE{/bold} - ',
+        fg: 'green'
+      })
+
+      switch (status.type) {
+        case 'classic': {
+          const lan = blessed.text({
+            parent: indicator,
+            tags: true,
+            content: `LAN: {underline}${lanAddress(status.port)}{/underline}`,
+            left: 9,
+            width: 'shrink',
+            style: {
+              fg: 'green'
+            }
+          })
+
+          lan.on('click', () => void open(lanAddress(status.port)))
+
+          const pub = blessed.text({
+            parent: indicator,
+            tags: true,
+            content: `Public: {underline}${publicAddress(status.port)}{/underline}`,
+            right: 0,
+            width: 'shrink',
+            style: {
+              fg: 'green'
+            }
+          })
+          void publicip
+            .then(() => pub.setContent(`Public: {underline}${publicAddress(status.port)}{/underline}`))
+
+          pub.on('click', () => void open(publicAddress(status.port)))
+
+          break
+        }
+        case 'tunnel': {
+          const lan = blessed.text({
+            parent: indicator,
+            tags: true,
+            content: `{underline}${status.address}{/underline}`,
+            left: 9,
+            width: 'shrink',
+            style: {
+              fg: 'green'
+            }
+          })
+
+          lan.on('click', () => void open(status.address))
+
+          const password = blessed.text({
+            parent: indicator,
+            right: 0,
+            width: 'shrink',
+            style: {
+              fg: 'gray',
+              underline: true
+            },
+            content: 'Loading...'
+          })
+          void publicip
+            .then((ip) => {
+              password.style.fg = 'magenta'
+              password.style.underline = true
+
+              password.setHover('Click to copy')
+              password.setContent(`Tunnel PW: ${ip}`)
+
+              password.on('click', () => {
+                void clipboardy.write(ip)
+                  .then(() => {
+                    password.style.fg = 'green'
+                    screen.render()
+                    setTimeout(() => {
+                      password.style.fg = 'magenta'
+                      screen.render()
+                    }, 500)
+                  })
+              })
+            })
+
+          break
+        }
+      }
+    }
+  } else {
+    blessed.text({
+      parent: indicator,
+      fg: 'gray',
+      bold: 'true',
+      content: 'OFFLINE. Connecting...'
+    })
+  }
+
+  screen.render()
+}
 
 const explanations = {
   tunnel: 'Create a [localtunnel](https://www.npmjs.com/package/localtunnel) that will allow connections without port forwarding. Will enforce a tunnel password',
@@ -627,6 +714,17 @@ export type HostType = {
 }
 
 export function promptBootScreen (): Promise<HostType> {
+  function lanAddress (port: number): string {
+    return `Your server is available on LAN at: [${localip}:${port}](http://${localip}:${port})`
+  }
+
+  function publicAddress (port: number): string {
+    const ip = Bun.peek(publicip)
+    if (ip instanceof Promise) return 'Loading public IP...'
+
+    return `Your server is available publicly at [${ip}:${port}](http://${ip}:${port})`
+  }
+
   return new Promise((resolve) => {
     const box = blessed.box({
       parent: screen,
