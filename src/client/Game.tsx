@@ -9,6 +9,7 @@ export default function Game (): React.ReactNode {
   const connection = useRef<WebSocket>(undefined)
 
   const [loading, setLoading] = useState(true)
+  const [requestingNew, setRequestingNew] = useState(false)
   const [captcha, setCaptcha] = useState<string>()
   const [valid, setValid] = useState(false)
   const [error, setError] = useState<string>()
@@ -73,6 +74,7 @@ export default function Game (): React.ReactNode {
 
         switch (command) {
           case 'SEQUENCE':
+            setRequestingNew(false)
             setCaptcha(data)
             for (const key in heldKeys.keys()) heldKeys.set(key, false)
             break
@@ -115,7 +117,14 @@ export default function Game (): React.ReactNode {
       </div>
 
       <img src={`/api/captcha/${captcha}`} alt='captcha' />
-      <Button color='ghost' shape='circle' className='symbol text-5xl size-8' onClick={() => connection.current?.send('SEQUENCE')}>cached</Button>
+      <Button
+        color='ghost'
+        shape='circle'
+        className={twMerge('symbol text-5xl size-8', requestingNew && 'animate-spin')}
+        onClick={() => { setRequestingNew(true); connection.current?.send('SEQUENCE') }}
+      >
+        cached
+      </Button>
 
       <ul className={twMerge('input font-mono flex justify-center', heldKeys.size && (valid ? 'border-green-300' : 'border-red-400'))}>
         {Array.from(heldKeys.entries()).map(([key, status]) => (
