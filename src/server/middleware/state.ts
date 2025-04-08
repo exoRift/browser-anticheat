@@ -68,7 +68,7 @@ class SecureRandom {
       this.index = 0
     }
 
-    return this.pool[this.index++] / 0xFFFFFFFF
+    return this.pool[this.index++]! / 0xFFFFFFFF
   }
 
   static randomInt (min: number, max: number): number {
@@ -167,7 +167,7 @@ class SessionManager {
 
     socket.on('message', (msg) => {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const [command, data] = msg.toString().split(':')
+      const [command, data] = msg.toString().split(':') as [string, string]
 
       const meta = this.metadata.get(session.id)
       const captcha = this.captchas.assigned.get(session.id)
@@ -326,7 +326,7 @@ class CaptchaManager {
     while (sequence.size < numKeys) {
       const characterPool = SecureRandom.randomFloat() > 0.5 ? CAPTCHA_CHARACTERS_LEFT : CAPTCHA_CHARACTERS_RIGHT
 
-      const char = characterPool[SecureRandom.randomInt(0, characterPool.length - 1)]
+      const char = characterPool[SecureRandom.randomInt(0, characterPool.length - 1)]!
 
       sequence.add(char)
     }

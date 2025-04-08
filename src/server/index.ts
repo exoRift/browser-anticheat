@@ -12,9 +12,6 @@ import * as profile from './controllers/profile.ts'
 import * as connect from './controllers/connect.ts'
 import * as captcha from './controllers/captcha.ts'
 
-terminal.launch()
-terminal.indicateOnline()
-
 // Define server
 const app = express()
 ws(app)
@@ -61,10 +58,18 @@ if (process.env.NODE_ENV === 'production') {
   // @bun nobuild]
 }
 
-// Listen
-app.listen(process.env.PORT, () => {
-  fetch('https://api.ipify.org')
-    .then((res) => res.text())
-    .then((ip) => terminal.indicateOnline(`http://${ip}:${process.env.PORT}`))
-    .catch((err: Error) => terminal.indicateOnline(err))
-})
+terminal.engageSizeGuard()
+// Ask the user how they want to host the server
+void terminal.promptBootScreen()
+  .then((method) => {
+    terminal.launch()
+    // terminal.indicateOnline()
+
+    // Listen
+    app.listen(process.env.PORT, () => {
+      // fetch('https://api.ipify.org')
+      //   .then((res) => res.text())
+      //   .then((ip) => terminal.indicateOnline(`http://${ip}:${process.env.PORT}`))
+      //   .catch((err: Error) => terminal.indicateOnline(err))
+    })
+  })

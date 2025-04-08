@@ -105,7 +105,7 @@ export const options: Option[] = [
         exit()
       })
 
-      input.on('keypress', (ch, key) => {
+      input.on('keypress', (ch, key: blessed.Widgets.Events.IKeyEventArg) => {
         switch (key.name) {
           case 'up': list.up(1); break
           case 'down': list.down(1); break
