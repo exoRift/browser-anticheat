@@ -1,6 +1,7 @@
 import os from 'os'
 import blessed from 'blessed'
 import open from 'open'
+import clipboardy from 'clipboardy'
 
 import { state } from './state.ts'
 import { MenuManager } from './menu.ts'
@@ -36,6 +37,13 @@ function publicAddress (port: number): string {
   if (ip instanceof Promise) return 'Loading public IP...'
 
   return `Your server is available publicly at [${ip}:${port}](http://${ip}:${port})`
+}
+
+export function deferredDestroy (node: blessed.Widgets.Node): void {
+  setTimeout(() => {
+    node.destroy()
+    screen.render()
+  })
 }
 
 export const screen = blessed.screen({
@@ -83,6 +91,12 @@ export function engageSizeGuard (): void {
 }
 
 export function launch (): void {
+  let pauseTableRefresh = false
+  screen.on('mousedown', () => {
+    if (screen.focused === players) pauseTableRefresh = true
+  })
+  screen.on('mouseup', () => { pauseTableRefresh = false })
+
   const grid = blessed.box({
     parent: screen,
     left: 0,
@@ -118,6 +132,7 @@ export function launch (): void {
 
   const players = blessed.listtable({
     parent: grid,
+    label: ' {bold}Players{/bold} ',
     tags: true,
     keys: true,
     mouse: true,
@@ -369,21 +384,18 @@ export function launch (): void {
       screen.render()
     }, 50)
 
-    let list: blessed.Widgets.ListbarElement // eslint-disable-line prefer-const
-
     function exit (): void {
       screen.removeKey('escape', exit)
-      list.removeAllListeners()
       clearInterval(interval)
-      box.hide()
+      list.removeAllListeners()
       players.focus()
-      menuManager.locked = false
       players.select(index)
-      box.destroy()
+      menuManager.locked = false
+      deferredDestroy(box)
       screen.render()
     }
 
-    list = blessed.listbar({
+    const list = blessed.listbar({
       parent: box,
       keys: true,
       mouse: true,
@@ -468,6 +480,8 @@ export function launch (): void {
   })
 
   setInterval(() => {
+    if (pauseTableRefresh) return
+
     const selected = players.selected
     players.setData(
       [
@@ -490,7 +504,7 @@ export function launch (): void {
     else players.select(NaN)
 
     screen.render()
-  }, 200)
+  }, 50)
 
   const components = [menu, log, players]
   for (const component of components) {
@@ -609,7 +623,6 @@ export type HostType = {
   port: number
 } | {
   type: 'tunnel'
-  port: number
   subdomain: string
 }
 
@@ -710,7 +723,7 @@ export function promptBootScreen (): Promise<HostType> {
     })
     list.focus()
 
-    list.on('blur', () => list.focusable && screen.focused !== list && list.focus())
+    list.on('blur', () => !list.hidden && screen.focused !== list && list.focus())
 
     list.on('select item', (item: blessed.Widgets.TextElement) => {
       switch (item.content.split(' ')[1]) {
@@ -723,9 +736,9 @@ export function promptBootScreen (): Promise<HostType> {
     list.on('select', (item: blessed.Widgets.TextElement) => {
       switch (item.content.split(' ')[1]) {
         case 'Classic': {
+          list.hide()
           let port = DEFAULT_PORT
 
-          list.focusable = false
           const subbox = blessed.box({
             parent: box,
             top: 0,
@@ -762,7 +775,7 @@ export function promptBootScreen (): Promise<HostType> {
             parent: subbox,
             left: 0,
             right: 0,
-            top: 6,
+            top: 7,
             height: 1,
             align: 'center',
             fg: 'gray',
@@ -774,13 +787,15 @@ export function promptBootScreen (): Promise<HostType> {
             left: 'center',
             width: 8,
             height: 1,
-            top: 7,
+            top: 8,
             bottom: 0,
             align: 'center',
             bg: 'white',
             fg: 'black',
+            keys: true,
+            mouse: true,
             inputOnFocus: true,
-            value: DEFAULT_PORT.toString()
+            value: port.toString()
           })
 
           const lan = hypertext({
@@ -788,7 +803,7 @@ export function promptBootScreen (): Promise<HostType> {
             left: 0,
             right: 0,
             height: 1,
-            top: 10,
+            top: 11,
             bottom: 0,
             align: 'center',
             content: lanAddress(port)
@@ -798,11 +813,12 @@ export function promptBootScreen (): Promise<HostType> {
             left: 0,
             right: 0,
             height: 1,
-            top: 11,
+            top: 12,
             bottom: 0,
             align: 'center',
             content: publicAddress(port)
           })
+          void publicip.then(() => pub.setContent(publicAddress(port)))
 
           input.on('keypress', () => {
             setTimeout(() => {
@@ -853,18 +869,17 @@ export function promptBootScreen (): Promise<HostType> {
             switch (item.content.split(' ')[1]) {
               case 'Use':
                 screen.off('keypress', onKey)
-                box.destroy()
+                deferredDestroy(box)
                 resolve({
                   type: 'classic',
                   port
                 })
                 break
               case 'Back':
-                list.focusable = true
-                list.focus()
-                sublist.removeAllListeners()
                 screen.off('keypress', onKey)
-                subbox.destroy()
+                deferredDestroy(subbox)
+                list.show()
+                list.focus()
                 break
             }
           })
@@ -873,6 +888,168 @@ export function promptBootScreen (): Promise<HostType> {
           break
         }
         case 'Tunnel': {
+          list.hide()
+          let subdomain = `${os.userInfo().username}-thor`
+
+          const subbox = blessed.box({
+            parent: box,
+            top: 0,
+            left: 1,
+            right: 1,
+            bottom: 0,
+            border: 'line',
+            style: {
+              border: {
+                fg: 'blue'
+              }
+            }
+          })
+          blessed.box({
+            parent: subbox,
+            left: 0,
+            right: 0,
+            align: 'center',
+            bold: 'true',
+            fg: 'blue',
+            content: 'Localtunnel Connection'
+          })
+
+          blessed.box({
+            parent: subbox,
+            top: 2,
+            left: 4,
+            right: 4,
+            height: 4,
+            align: 'center',
+            content: 'A connection hosted on a port reverse-proxied using localtunnel. This removes the need for port-forwarding and allows for easy setup. The chosen port doesn\'t matter as long as its available. A custom subdomain can be requested.'
+          })
+
+          blessed.box({
+            parent: subbox,
+            left: 0,
+            right: 0,
+            top: 7,
+            height: 1,
+            align: 'center',
+            fg: 'gray',
+            content: 'Press tab to edit subdomain. Press enter or escape to stop editing'
+          })
+
+          const addressBox = blessed.box({
+            parent: subbox,
+            left: 'center',
+            width: 28,
+            height: 1,
+            top: 8
+          })
+          const input = blessed.textbox({
+            parent: addressBox,
+            left: 0,
+            width: 20,
+            height: 1,
+            top: 0,
+            align: 'right',
+            bg: 'white',
+            fg: 'black',
+            keys: true,
+            mouse: true,
+            inputOnFocus: true,
+            value: subdomain
+          })
+          blessed.box({
+            parent: addressBox,
+            left: 20,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            content: '.loca.lt'
+          })
+
+          const password = blessed.box({
+            parent: subbox,
+            tags: true,
+            left: 'center',
+            width: 'shrink',
+            top: 12,
+            height: 1,
+            align: 'center',
+            content: 'Loading tunnel password...'
+          })
+          void publicip.then((ip) => {
+            password.style.underline = true
+            password.setHover('Click to copy')
+            password.setContent(`Your tunnel password will be {magenta-fg}${ip}{/magenta-fg}`)
+            screen.render()
+            password.on('click', () => {
+              void clipboardy.write(ip)
+                .then(() => {
+                  sublist.focus()
+                  password.style.fg = 'green'
+                  screen.render()
+                  setTimeout(() => {
+                    password.style.fg = 'white'
+                    screen.render()
+                  }, 500)
+                })
+            })
+          })
+
+          input.on('keypress', () => {
+            setTimeout(() => {
+              subdomain = input.value
+            })
+          })
+
+          function onKey (ch: any, key: blessed.Widgets.Events.IKeyEventArg): void {
+            switch (key.name) {
+              case 'tab': input.focus(); break
+            }
+          }
+
+          const sublist = blessed.listbar({
+            parent: subbox,
+            bottom: 1,
+            left: 'center',
+            width: 23,
+            height: 1,
+            keys: true,
+            mouse: true,
+            autoCommandKeys: true,
+            style: {
+              selected: {
+                bg: 'yellow',
+                fg: 'black'
+              }
+            },
+            commands: undefined as any,
+            items: [
+              ' Use',
+              ' Back'
+            ] as any
+          })
+          sublist.focus()
+          sublist.on('blur', () => sublist.focusable && screen.focused !== sublist && sublist.focus())
+
+          sublist.on('select', (item: blessed.Widgets.TextElement) => {
+            switch (item.content.split(' ')[1]) {
+              case 'Use':
+                screen.off('keypress', onKey)
+                deferredDestroy(box)
+                resolve({
+                  type: 'tunnel',
+                  subdomain
+                })
+                break
+              case 'Back':
+                screen.off('keypress', onKey)
+                deferredDestroy(subbox)
+                list.show()
+                list.focus()
+                break
+            }
+          })
+
+          screen.on('keypress', onKey)
           break
         }
         case 'Quit': process.exit(); break

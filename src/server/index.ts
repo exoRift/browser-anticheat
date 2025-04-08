@@ -1,4 +1,5 @@
 import express from 'express'
+import localtunnel from 'localtunnel'
 
 import cookieSession from 'cookie-session'
 import ws from 'express-ws'
@@ -66,10 +67,20 @@ void terminal.promptBootScreen()
     // terminal.indicateOnline()
 
     // Listen
-    app.listen(process.env.PORT, () => {
-      // fetch('https://api.ipify.org')
-      //   .then((res) => res.text())
-      //   .then((ip) => terminal.indicateOnline(`http://${ip}:${process.env.PORT}`))
-      //   .catch((err: Error) => terminal.indicateOnline(err))
+    const server = app.listen(method.type === 'classic' ? method.port : 0, (err) => {
+      console.error(err)
+
+      if (method.type === 'tunnel') {
+        localtunnel({
+          port: (server.address() as Exclude<ReturnType<typeof server.address>, string | null>).port,
+          subdomain: method.subdomain
+        })
+          .then(() => {
+            console.log('bruh')
+          })
+          .catch((err) => {
+            console.error(err)
+          })
+      }
     })
   })
