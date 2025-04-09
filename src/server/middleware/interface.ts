@@ -3,11 +3,11 @@ import blessed from 'blessed'
 import open from 'open'
 import clipboardy from 'clipboardy'
 
-import { state } from './state.ts'
-import { MenuManager } from './menu.ts'
+import { state } from './state'
+import { MenuManager } from './menu'
+import { hypertext } from '../components/hypertext'
 
 import loki from '../../../public/loki.txt' with { type: 'text' }
-import { hypertext } from '../components/hypertext.ts'
 
 const DEFAULT_PORT = 3000
 const MIN_WIDTH = 85

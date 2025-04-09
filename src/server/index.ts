@@ -4,14 +4,14 @@ import localtunnel from 'localtunnel'
 import cookieSession from 'cookie-session'
 import ws from 'express-ws'
 
-import * as terminal from './middleware/interface.ts'
-import { middleware as stateMiddleware } from './middleware/state.ts'
-import { secure } from './middleware/secure.ts'
+import * as terminal from './middleware/interface'
+import { middleware as stateMiddleware } from './middleware/state'
+import { secure } from './middleware/secure'
 
-import * as join from './controllers/join.ts'
-import * as profile from './controllers/profile.ts'
-import * as connect from './controllers/connect.ts'
-import * as captcha from './controllers/captcha.ts'
+import * as join from './controllers/join'
+import * as profile from './controllers/profile'
+import * as connect from './controllers/connect'
+import * as captcha from './controllers/captcha'
 
 // Define server
 const app = express()
@@ -28,7 +28,7 @@ app
 
 // Define controllers
 app
-  .all('/api', (req, res) => void res.sendStatus(200).end())
+  .all('/api', (_, res) => void res.sendStatus(200).end())
   .use('/api/join', express.urlencoded({ extended: false }))
   .post('/api/join', join.post)
   .get('/api/profile', profile.get)
@@ -36,13 +36,13 @@ app
   .post('/api/profile', profile.post)
   .ws('/api/connect', connect.ws)
   .get('/api/captcha/:id', captcha.get)
-  .all('/api/*', (req, res) => void res.sendStatus(404).end())
+  .all('/api/*', (_, res) => void res.sendStatus(404).end())
 
 // Attach frontend
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('build'))
 
-  app.get('*', (req, res) => res.sendFile('index.html', { root: 'build/' }))
+  app.get('*', (_, res) => res.sendFile('index.html', { root: 'build/' }))
 } else {
   // @bun nobuild[
   const { createServer: createViteServer } = await import('vite')

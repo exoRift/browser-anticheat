@@ -103,7 +103,7 @@ export function numberInput ({
     }
   })
 
-  input.on('keypress', (ch, key: blessed.Widgets.Events.IKeyEventArg) => {
+  input.on('keypress', (_, key: blessed.Widgets.Events.IKeyEventArg) => {
     switch (key.name) {
       case 'left': left.press(); break
       case 'right': right.press(); break

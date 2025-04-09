@@ -1,7 +1,7 @@
 import blessed from 'blessed'
 
-import { numberInput } from '../components/number_input.ts'
-import { state } from './state.ts'
+import { numberInput } from '../components/number_input'
+import { state } from './state'
 
 export type Option = {
   type: 'action'

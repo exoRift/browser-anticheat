@@ -1,7 +1,7 @@
 import type { Handler } from 'express'
 import path from 'path'
 
-import { CAPTCHA_PATH } from '../middleware/state.ts'
+import { CAPTCHA_PATH } from '../middleware/state'
 
 export const get: Handler = async function get (req, res) {
   if (!req.session) return void res.status(500).send('Session is null when it should not be').end()
