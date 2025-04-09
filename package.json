@@ -6,6 +6,7 @@
     "dev": "bun run --watch .",
     "build": "vite build && bun build src/server/index.ts --production --compile --outfile thor",
     "lint": "eslint .",
+    "validate": "tsc --noEmit",
     "update-icons": "curl -L https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.woff2 -o public/fonts/material-symbols-outlined.woff2"
   },
   "dependencies": {
