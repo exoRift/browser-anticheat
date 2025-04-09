@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch .",
-    "build": "vite build && bun build src/server/index.ts --production --compile --outfile thor",
+    "build": "vite build && bun build src/server/index.ts --production --compile --outfile thor -e term.js -e pty.js",
     "lint": "eslint .",
     "validate": "tsc --noEmit",
     "update-icons": "curl -L https://github.com/google/material-design-icons/raw/master/variablefont/MaterialSymbolsOutlined%5BFILL,GRAD,opsz,wght%5D.woff2 -o public/fonts/material-symbols-outlined.woff2"
@@ -42,11 +42,14 @@
     "typescript": "^5.8.2",
     "vite": "^6.0.11"
   },
+  "trustedDependencies": [
+    "skia-canvas"
+  ],
+  "patchedDependencies": {
+    "blessed@0.1.81": "patches/blessed@0.1.81.patch"
+  },
   "engines": {
     "node": ">=23",
     "bun": ">=1.2.3"
-  },
-  "trustedDependencies": [
-    "skia-canvas"
-  ]
+  }
 }

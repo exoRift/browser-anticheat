@@ -1,0 +1,144 @@
+diff --git a/lib/widget.js b/lib/widget.js
+index 6d1444dea1d8d0bb32145fdfe7654c637b0c5d5e..10ed04e8e406931e164f22312956fa5a3b75eb91 100644
+--- a/lib/widget.js
++++ b/lib/widget.js
+@@ -4,9 +4,42 @@
+  * https://github.com/chjj/blessed
+  */
+ 
+-var widget = exports;
++import Node from './widgets/node';
++import Screen from './widgets/screen';
++import Element from './widgets/element';
++import Box from './widgets/box';
++import Text from './widgets/text';
++import Line from './widgets/line';
++import ScrollableBox from './widgets/scrollablebox';
++import ScrollableText from './widgets/scrollabletext';
++import BigText from './widgets/bigtext';
++import List from './widgets/list';
++import Form from './widgets/form';
++import Input from './widgets/input';
++import Textarea from './widgets/textarea';
++import Textbox from './widgets/textbox';
++import Button from './widgets/button';
++import ProgressBar from './widgets/progressbar';
++import FileManager from './widgets/filemanager';
++import Checkbox from './widgets/checkbox';
++import RadioSet from './widgets/radioset';
++import RadioButton from './widgets/radiobutton';
++import Prompt from './widgets/prompt';
++import Question from './widgets/question';
++import Message from './widgets/message';
++import Loading from './widgets/loading';
++import Listbar from './widgets/listbar';
++import Log from './widgets/log';
++import Table from './widgets/table';
++import ListTable from './widgets/listtable';
++import Terminal from './widgets/terminal';
++import Image from './widgets/image';
++import ANSIImage from './widgets/ansiimage';
++import OverlayImage from './widgets/overlayimage';
++import Video from './widgets/video';
++import Layout from './widgets/layout';
+ 
+-widget.classes = [
++export const classes = [
+   'Node',
+   'Screen',
+   'Element',
+@@ -43,18 +76,83 @@ widget.classes = [
+   'Layout'
+ ];
+ 
+-widget.classes.forEach(function(name) {
+-  var file = name.toLowerCase();
+-  widget[name] = widget[file] = require('./widgets/' + file);
+-});
++export {
++  Node,
++  Screen,
++  Element,
++  Box,
++  Text,
++  Line,
++  ScrollableBox,
++  ScrollableText,
++  BigText,
++  List,
++  Form,
++  Input,
++  Textarea,
++  Textbox,
++  Button,
++  ProgressBar,
++  FileManager,
++  Checkbox,
++  RadioSet,
++  RadioButton,
++  Prompt,
++  Question,
++  Message,
++  Loading,
++  Listbar,
++  Log,
++  Table,
++  ListTable,
++  Terminal,
++  Image,
++  ANSIImage,
++  OverlayImage,
++  Video,
++  Layout,
++  Node as node,
++  Screen as screen,
++  Element as element,
++  Box as box,
++  Text as text,
++  Line as line,
++  ScrollableBox as scrollablebox,
++  ScrollableText as scrollabletext,
++  BigText as bigtext,
++  List as list,
++  Form as form,
++  Input as input,
++  Textarea as textarea,
++  Textbox as textbox,
++  Button as button,
++  ProgressBar as progressbar,
++  FileManager as filemanager,
++  Checkbox as checkbox,
++  RadioSet as radioset,
++  RadioButton as radiobutton,
++  Prompt as prompt,
++  Question as question,
++  Message as message,
++  Loading as loading,
++  Listbar as listbar,
++  Log as log,
++  Table as table,
++  ListTable as listtable,
++  Terminal as terminal,
++  Image as image,
++  ANSIImage as ansiimage,
++  OverlayImage as overlayimage,
++  Video as video,
++  Layout as layout,
++};
+ 
+-widget.aliases = {
++export const aliases = {
+   'ListBar': 'Listbar',
+   'PNG': 'ANSIImage'
+ };
+ 
+-Object.keys(widget.aliases).forEach(function(key) {
+-  var name = widget.aliases[key];
+-  widget[key] = widget[name];
+-  widget[key.toLowerCase()] = widget[name];
+-});
++export const ListBar = Listbar;
++export const PNG = ANSIImage;
++export const listbarAlias = Listbar;
++export const png = ANSIImage;
+\ No newline at end of file
