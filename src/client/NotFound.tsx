@@ -1,5 +1,8 @@
 import { Button } from 'react-daisyui'
 
+/**
+ * Invalid page fallback
+ */
 export default function NotFound (): React.ReactNode {
   return (
     <div className='grow flex flex-col gap-8 justify-center items-center'>

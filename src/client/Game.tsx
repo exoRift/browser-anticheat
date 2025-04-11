@@ -5,6 +5,9 @@ import { Button } from 'react-daisyui'
 
 import { addListener, launch, removeListener, stop } from 'devtools-detector'
 
+/**
+ * Main captcha screen
+ */
 export default function Game (): React.ReactNode {
   const connection = useRef<WebSocket>(undefined)
 
@@ -19,6 +22,10 @@ export default function Game (): React.ReactNode {
 
   useEffect(() => {
     if (!loading) {
+      /**
+       * Upon opening inspector, send msg
+       * @param isOpen Is the inspector open?
+       */
       function onOpen (isOpen: boolean): void {
         if (isOpen) connection.current?.send('INSPECT')
       }

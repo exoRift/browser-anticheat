@@ -1,5 +1,13 @@
 import blessed from 'blessed'
 
+/**
+ * A blessed number input element
+ * @param props               The props
+ * @param props.value         The numerical value
+ * @param props.forcePositive Force the value to be positive
+ * @param props.onExit        Save callback
+ * @returns                   The node
+ */
 export function numberInput ({
   value,
   forcePositive,

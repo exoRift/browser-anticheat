@@ -28,6 +28,10 @@ for (const interf in interfaces) {
 const publicip = fetch('https://api.ipify.org')
   .then((res) => res.text())
 
+/**
+ * Send a destruction to the event loop to defer it (useful for not breaking renders and event listeners)
+ * @param node The node to destroy
+ */
 export function deferredDestroy (node: blessed.Widgets.Node): void {
   setTimeout(() => {
     node.destroy()
@@ -40,6 +44,9 @@ export const screen = blessed.screen({
   title: 'Thor Anticheat'
 })
 
+/**
+ * Start detecting if the terminal is too small and initiate a guard message if it is
+ */
 export function engageSizeGuard (): void {
   const sizeWarning = blessed.box({
     parent: screen,
@@ -55,10 +62,17 @@ export function engageSizeGuard (): void {
     hidden: true
   })
 
+  /**
+   * Listen for an esc to exit
+   */
   function escKeypress (): void {
     process.exit()
   }
 
+  /**
+   * Assess the size of the terminal and determine if it's big enough
+   * If it's not big enough, hide the screen and show a emssage
+   */
   function assessSize (): void {
     if ((screen.width as number) < MIN_WIDTH || (screen.height as number) < MIN_HEIGHT) {
       if (sizeWarning.hidden) {
@@ -79,6 +93,9 @@ export function engageSizeGuard (): void {
   })
 }
 
+/**
+ * Launch the main control pannel
+ */
 export function launch (): void {
   let pauseTableRefresh = false
   screen.on('mousedown', () => {
@@ -373,6 +390,9 @@ export function launch (): void {
       screen.render()
     }, 50)
 
+    /**
+     * Exit the player inspector
+     */
     function exit (): void {
       screen.removeKey('escape', exit)
       clearInterval(interval)
@@ -550,6 +570,9 @@ export function launch (): void {
     console.error(err.stack) // TEMP: https://github.com/oven-sh/bun/issues/18783
     throw err
   })
+  process.once('unhandledRejection', (err) => {
+    throw err
+  })
 
   menu.focus()
   screen.render()
@@ -576,13 +599,27 @@ type Status = {
   type: 'classic'
   port: number
 }
+/**
+ * Indicate the online status of he program
+ * @param status The status, comprised of the type and relevant information or an error
+ */
 export function indicateOnline (status?: Status | Error): void {
   indicator.forDescendants((d) => d.destroy(), false)
 
+  /**
+   * Construct the local address
+   * @param port The port
+   * @returns    The local address
+   */
   function lanAddress (port: number): string {
     return `http://${localip}:${port}`
   }
 
+  /**
+   * Construct the public address
+   * @param port The port
+   * @returns    The public address
+   */
   function publicAddress (port: number): string {
     const ip = Bun.peek(publicip)
     if (ip instanceof Promise) return 'Loading public IP...'
@@ -713,11 +750,25 @@ export type HostType = {
   subdomain: string
 }
 
+/**
+ * Prompt the user with the option of which hosting method they want to use
+ * @returns The host type the user chooses
+ */
 export function promptBootScreen (): Promise<HostType> {
+  /**
+   * Construct the user's LAN address
+   * @param port The port
+   * @returns    The user's LAN address
+   */
   function lanAddress (port: number): string {
     return `Your server is available on LAN at: [${localip}:${port}](http://${localip}:${port})`
   }
 
+  /**
+   * Construct the user's public address
+   * @param port The port
+   * @returns    The public address
+   */
   function publicAddress (port: number): string {
     const ip = Bun.peek(publicip)
     if (ip instanceof Promise) return 'Loading public IP...'
@@ -933,6 +984,11 @@ export function promptBootScreen (): Promise<HostType> {
             })
           })
 
+          /**
+           * Detect the tab key to switch focus to the input
+           * @param ch  The character pressed
+           * @param key The pressed key information
+           */
           function onKey (ch: any, key: blessed.Widgets.Events.IKeyEventArg): void {
             switch (key.name) {
               case 'tab': input.focus(); break
@@ -1098,6 +1154,11 @@ export function promptBootScreen (): Promise<HostType> {
             })
           })
 
+          /**
+           * Detect the tab key to switch focus to the input
+           * @param ch  The character pressed
+           * @param key The pressed key information
+           */
           function onKey (ch: any, key: blessed.Widgets.Events.IKeyEventArg): void {
             switch (key.name) {
               case 'tab': input.focus(); break

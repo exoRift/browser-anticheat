@@ -1,6 +1,11 @@
 import type { WebsocketRequestHandler } from 'express-ws'
 
-export const ws: WebsocketRequestHandler = function ws (socket, req) {
+/**
+ * Connect to the Anticheat websocket
+ * @param socket The socket
+ * @param req    The request
+ */
+export const ws: WebsocketRequestHandler = function ws (socket, req): void {
   if (!req.session?.valid) return socket.terminate()
   const meta = req.state.sessions.metadata.get(req.session.id)
   if (!meta) {

@@ -57,11 +57,17 @@ declare module 'express-serve-static-core' {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-class SecureRandom {
+/**
+ * A utility for getting random numbers cryptographically securely
+ */
+class SecureRandom { // eslint-disable-line @typescript-eslint/no-extraneous-class
   static POOL_SIZE = 64
   static pool = new Uint32Array(this.POOL_SIZE)
   static index = this.pool.length - 1
+  /**
+   * Get a random float between 0 and 1
+   * @returns A random float
+   */
   static randomFloat (): number {
     if (this.index >= this.pool.length - 1) {
       crypto.getRandomValues(this.pool)
@@ -71,11 +77,20 @@ class SecureRandom {
     return this.pool[this.index++]! / 0xFFFFFFFF
   }
 
+  /**
+   * Get a random integer within a range
+   * @param min Minimum (inclusive)
+   * @param max Maximum (inclusive)
+   * @returns   A random integer
+   */
   static randomInt (min: number, max: number): number {
     return Math.round(this.randomFloat() * (max - min) + min)
   }
 }
 
+/**
+ * Player session manager
+ */
 class SessionManager {
   private readonly captchaTimeouts = new Map<string, Timer>()
   private readonly pingIntervals = new Map<string, Timer>()
@@ -83,6 +98,10 @@ class SessionManager {
   private readonly sockets = new Map<string, ws.WebSocket>()
   readonly metadata = new Map<string, SessionStats>()
 
+  /**
+   * Register a session
+   * @param session The session information
+   */
   add (session: Session): void {
     this.metadata.set(session.id, {
       name: session.name,
@@ -115,6 +134,11 @@ class SessionManager {
     })
   }
 
+  /**
+   * Register a connected websocket
+   * @param session The session
+   * @param socket  The socket connection
+   */
   registerSocket (session: Session, socket: ws.WebSocket): void {
     this.sockets.set(session.id, socket)
     socket.once('close', () => {
@@ -251,6 +275,10 @@ class SessionManager {
     })
   }
 
+  /**
+   * Generate a new captcha for a player
+   * @param session The session
+   */
   async generateNewSequenceForSession (session: Session): Promise<void> {
     clearTimeout(this.captchaTimeouts.get(session.id))
     const data = this.metadata.get(session.id)
@@ -279,7 +307,7 @@ class SessionManager {
   /**
    * Get the standing of a session formatted for blessed
    * @param id The session ID
-   * @returns The standing
+   * @returns  The standing
    */
   getStanding (id: string): string {
     const data = this.metadata.get(id)
@@ -300,6 +328,10 @@ class SessionManager {
     return '{green-fg}Good{/green-fg}'
   }
 
+  /**
+   * Kick a player and remove their information
+   * @param id The session ID
+   */
   kick (id: string): Promise<void> {
     const socket = this.sockets.get(id)
     socket?.send('ERROR:You\'ve been kicked by the host')
@@ -316,10 +348,18 @@ interface Captcha {
   id: string
   sequence: Set<string>
 }
+
+/**
+ * The captcha manager. Stores the active captcha for players and generates new ones
+ */
 class CaptchaManager {
   /** Captchas assigned to players */
   readonly assigned = new Map<string, Captcha>()
 
+  /**
+   * Generate a new captcha sequence
+   * @returns The sequence
+   */
   static generateSequence (): Set<string> {
     const numKeys = SecureRandom.randomInt(state.captchaMinCharacters, state.captchaMaxCharacters)
     const sequence = new Set<string>()
@@ -334,6 +374,11 @@ class CaptchaManager {
     return sequence
   }
 
+  /**
+   * Generate a captcha (sequence and image) for a player
+   * @param sessionID The player's session ID
+   * @returns         The captcha
+   */
   async generateCaptcha (sessionID: string): Promise<Captcha> {
     const id = Date.now().toString()
     const color = COLORS[Math.round(Math.random() * (COLORS.length - 1))]
@@ -368,6 +413,10 @@ class CaptchaManager {
     return obj
   }
 
+  /**
+   * Remove a captcha from the map and delete its image file source
+   * @param sessionID The session ID of the player the captcha belongs to
+   */
   async removeCaptcha (sessionID: string): Promise<void> {
     const captcha = this.assigned.get(sessionID)
 
@@ -388,6 +437,12 @@ export const state: State = {
   pingThreshold: 400
 }
 
+/**
+ * Attach the state object to the request
+ * @param req  The request
+ * @param res  The response
+ * @param next Next handler
+ */
 export const middleware: Handler = function middleware (req, res, next): void {
   req.state = state
 

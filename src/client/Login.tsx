@@ -3,6 +3,9 @@ import { twMerge } from 'tailwind-merge'
 import { Button, Form } from 'react-daisyui'
 import { HiddenInput } from './components/HiddenInput'
 
+/**
+ * Login page
+ */
 export default function Login (): React.ReactNode {
   const invalid = window.location.search.includes('invalid')
   return (

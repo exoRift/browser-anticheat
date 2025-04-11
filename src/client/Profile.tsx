@@ -4,6 +4,9 @@ import { useFetch } from '../hooks/useFetch'
 
 import { Button, Form, Input } from 'react-daisyui'
 
+/**
+ * The player's profile page
+ */
 export default function Profile (): React.ReactNode {
   const url = new URL(window.location.href)
   const taken = url.searchParams.get('nametaken')

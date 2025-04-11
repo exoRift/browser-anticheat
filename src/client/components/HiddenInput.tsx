@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Input, type InputProps } from 'react-daisyui'
 import { twMerge } from 'tailwind-merge'
 
+/**
+ * An input with a hidden value that can be revealed by holding the button
+ */
 export function HiddenInput (props: InputProps): React.ReactNode {
   const [show, setShow] = useState(false)
 

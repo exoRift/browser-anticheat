@@ -8,7 +8,7 @@ export default defineConfig({
     tailwindcss(),
     {
       name: 'headers',
-      configureServer (server) {
+      configureServer: (server) => {
         server.middlewares.use((req, res, next) => {
           if (req.url?.startsWith('/fonts') || req.url?.startsWith('/images')) {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')

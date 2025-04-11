@@ -11,6 +11,12 @@ type FetchResult<T> = {
   result: undefined
 }
 
+/**
+ * Statefully fetch from the API
+ * @param fn   The fetch function
+ * @param deps The dependencies to update
+ * @returns    The fetch result
+ */
 export function useFetch<T> (fn: (signal: AbortSignal) => false | undefined | null | '' | Promise<T>, deps: React.DependencyList): FetchResult<T> {
   const [result, setResult] = useState<FetchResult<T>>({ state: 'loading', result: undefined })
 

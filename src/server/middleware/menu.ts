@@ -80,6 +80,9 @@ export const options: Option[] = [
 
       input.focus()
 
+      /**
+       * Conditionally render a placeholder in the input
+       */
       function renderPlaceholder (): void {
         const empty = !input.value.length
         if (empty) placeholder.show()
@@ -363,6 +366,9 @@ export const options: Option[] = [
   }
 ]
 
+/**
+ * Manage the interactive menu state
+ */
 export class MenuManager {
   private activeMenu = ''
   readonly list: ReturnType<typeof blessed.list>
@@ -371,6 +377,12 @@ export class MenuManager {
 
   locked = false
 
+  /**
+   * Construct the menu manager
+   * @param screen The blessed screen
+   * @param list   The menu list element
+   * @param box    The menu box element
+   */
   constructor (screen: ReturnType<typeof blessed.screen>, list: ReturnType<typeof blessed.list>, box: blessed.Widgets.Node) {
     this.list = list
     this.screen = screen
@@ -379,6 +391,10 @@ export class MenuManager {
     this.registerEvents()
   }
 
+  /**
+   * Get the options to display in the menu
+   * @returns The options
+   */
   getOptions (): Option[] {
     const submenus = this.activeMenu.split('.')
     let choices = options
@@ -398,6 +414,10 @@ export class MenuManager {
       : choices
   }
 
+  /**
+   * Drill into a submenu
+   * @param submenu The name of the submenu
+   */
   drill (submenu: string): void {
     this.list.select(0)
     this.activeMenu += '.' + submenu
@@ -405,6 +425,9 @@ export class MenuManager {
     this.render()
   }
 
+  /**
+   * Back out of a submenu
+   */
   back (): void {
     this.list.select(0)
     this.activeMenu = this.activeMenu.slice(0, this.activeMenu.lastIndexOf('.'))
@@ -412,6 +435,9 @@ export class MenuManager {
     this.render()
   }
 
+  /**
+   * Register events for the menu
+   */
   registerEvents (): void {
     this.list.key('escape', () => this.back())
     this.list.on('select', (item) => {
@@ -424,6 +450,9 @@ export class MenuManager {
     })
   }
 
+  /**
+   * Render the menu
+   */
   render (): void {
     const opts = this.getOptions()
     this.list.setItems(opts.map((o) => o.name))

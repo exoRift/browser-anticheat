@@ -15,9 +15,15 @@ declare global {
     viewTransition: ViewTransition | null
   }
 }
+/**
+ * 1st half of View Transition
+ */
 function onSwap (): void {
   sessionStorage.setItem('original_path', window.location.pathname)
 }
+/**
+ * 2nd half of View Transition
+ */
 function onReveal (): void {
   if (sessionStorage.getItem('original_path') === window.location.pathname) document.documentElement.style.viewTransitionName = 'fade'
   sessionStorage.removeItem('original_path')

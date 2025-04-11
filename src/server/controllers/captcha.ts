@@ -3,7 +3,12 @@ import path from 'path'
 
 import { CAPTCHA_PATH } from '../middleware/state'
 
-export const get: Handler = async function get (req, res) {
+/**
+ * Get the player's active captcha (image buffer)
+ * @param req The request
+ * @param res The response
+ */
+export const get: Handler = function get (req, res): void {
   if (!req.session) return void res.status(500).send('Session is null when it should not be').end()
 
   const id = req.params.id!

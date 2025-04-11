@@ -26,7 +26,7 @@ export class StatefulMap<K, T> extends Map<K, T> {
   /**
    * Set the redefine dispatch
    * @private
-   * @param   callback The function
+   * @param callback The function
    */
   _setRedefine (callback: StatefulMap<K, T>['_dispatchRedefine']): void {
     this._dispatchRedefine = callback
@@ -41,8 +41,9 @@ export class StatefulMap<K, T> extends Map<K, T> {
 
   /**
    * Set the instance to an entirely new instance
-   * @param   value The new instance
-   * @returns       The new instance
+   * @param           value The new instance
+   * @returns               The new instance
+   * @throws  {Error}       If no redefinition callback is defined
    */
   reset (value: Map<K, T>): Map<K, T> {
     if (!this._dispatchRedefine) throw new Error('Cannot redefine Set. No redefine callback set.')
@@ -55,6 +56,9 @@ export class StatefulMap<K, T> extends Map<K, T> {
     return instance
   }
 
+  /**
+   * @override
+   */
   set (key: K, value: T): this {
     const old = super.get(key)
     const newKey = !this.has(key)
@@ -68,6 +72,7 @@ export class StatefulMap<K, T> extends Map<K, T> {
    * @note Always rerenders
    * @param items An array of items
    * @param keyFn Either the name of a property of each item or a function that returns the key for each item
+   * @returns     this
    */
   bulkSet<U extends K & keyof T> (items: T[], keyFn: U | ((i: T) => U)): this {
     for (const item of items) {
@@ -80,12 +85,18 @@ export class StatefulMap<K, T> extends Map<K, T> {
     return this
   }
 
+  /**
+   * @override
+   */
   delete (key: K): boolean {
     const returnValue = super.delete(key)
     if (returnValue) this._dispatchSignal?.(++this._signal)
     return returnValue
   }
 
+  /**
+   * @override
+   */
   clear (): void {
     super.clear()
     this._dispatchSignal?.(this._signal = 0)
@@ -93,6 +104,7 @@ export class StatefulMap<K, T> extends Map<K, T> {
 
   /**
    * Returns the set's signal. Used for effects and memos that use this set
+   * @returns The numeric signal
    */
   valueOf (): number {
     return this._signal
@@ -102,8 +114,8 @@ export class StatefulMap<K, T> extends Map<K, T> {
 /**
  * Use a stately set
  * @note Any effects or memos that use this set should also listen for its signal (`+INSTANCE`)
- * @param   initial The initial set value
- * @returns         The stately set
+ * @param initial The initial set value
+ * @returns       The stately set
  */
 export function useMap<K, T> (initial?: Map<K, T> | Array<[K, T]>): StatefulMap<K, T> {
   const [, setSignal] = useState(Array.isArray(initial) ? initial.length : initial?.size ?? 0)

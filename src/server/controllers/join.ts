@@ -1,6 +1,11 @@
 import type { Handler } from 'express'
 
-export const post: Handler = function post (req, res) {
+/**
+ * Create initial session (sign in with password)
+ * @param req The request
+ * @param res The response
+ */
+export const post: Handler = function post (req, res): void {
   if (!req.session) return void res.status(500).send('Session is null when it should not be').end()
 
   if (!req.state.passcode || req.body.passcode === req.state.passcode) {

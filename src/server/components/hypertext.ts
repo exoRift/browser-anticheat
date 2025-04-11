@@ -3,6 +3,12 @@ import open from 'open'
 
 const LINK_REGEX = /\[(?<text>.*?)\]\((?<link>.*?)\)/g
 
+/**
+ * A blessed text element that replaces markdown hyperlinks with clickable underlined segments
+ * @param props         The props
+ * @param props.content The text content
+ * @returns             The element
+ */
 export function hypertext ({ content, ...options }: blessed.Widgets.BoxOptions): blessed.Widgets.BoxElement {
   let segments: Array<[start: number, length: number, url: string]> = []
 
@@ -57,6 +63,10 @@ export function hypertext ({ content, ...options }: blessed.Widgets.BoxOptions):
   })
 
   const ogSetContent = box.setContent.bind(box)
+
+  /**
+   * @override
+   */
   box.setContent = function (content: string) {
     for (const child of box.children) child.destroy()
     box.children = []
