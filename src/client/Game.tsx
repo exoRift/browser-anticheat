@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMap } from '../hooks/useMap'
 import { twMerge } from 'tailwind-merge'
 import { Button } from 'react-daisyui'
 
 import { addListener, launch, removeListener, stop } from 'devtools-detector'
 
+const CAPTCHA_UPDATE_AUDIO = new Audio('/audio/captcha_update.wav')
+CAPTCHA_UPDATE_AUDIO.volume = 0.4
+
 /**
  * Main captcha screen
  */
 export default function Game (): React.ReactNode {
   const connection = useRef<WebSocket>(undefined)
+  const muted = useRef(false)
 
   const [loading, setLoading] = useState(true)
   const [requestingNew, setRequestingNew] = useState(false)
@@ -17,6 +21,12 @@ export default function Game (): React.ReactNode {
   const [valid, setValid] = useState(false)
   const [error, setError] = useState<string>()
   const heldKeys = useMap<string, boolean | null>()
+
+  const toggleMuted = useCallback(() => {
+    localStorage.setItem('settings:muted', muted.current ? 'false' : 'true')
+    muted.current = !muted.current
+    heldKeys.forceUpdate()
+  }, [muted])
 
   useEffect(() => setValid(false), [heldKeys.size])
 
@@ -69,6 +79,10 @@ export default function Game (): React.ReactNode {
   }, [])
 
   useEffect(() => {
+    muted.current = localStorage.getItem('settings:muted') === 'true'
+  }, [])
+
+  useEffect(() => {
     setLoading(true)
 
     connection.current = new WebSocket('/api/connect')
@@ -81,6 +95,7 @@ export default function Game (): React.ReactNode {
 
         switch (command) {
           case 'SEQUENCE':
+            if (!muted.current) void CAPTCHA_UPDATE_AUDIO.play()
             setRequestingNew(false)
             setCaptcha(data)
             for (const key in heldKeys.keys()) heldKeys.set(key, false)
@@ -140,6 +155,8 @@ export default function Game (): React.ReactNode {
       </ul>
 
       <span className='opacity-40 self-start ml-2 text-sm font-hatch'>Macs and older keyboards may not support all key combinations</span>
+
+      <button className='fixed symbol bottom-2 right-2 text-2xl cursor-pointer' onClick={toggleMuted}>{muted.current ? 'volume_off' : 'volume_up'}</button>
     </div>
   )
 }
