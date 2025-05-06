@@ -5,6 +5,7 @@ import cookieSession from 'cookie-session'
 import ws from 'express-ws'
 
 import * as terminal from './middleware/interface'
+import { middleware as userAgentCheckerMiddleware } from './middleware/useragent'
 import { middleware as stateMiddleware } from './middleware/state'
 import { secure } from './middleware/secure'
 
@@ -17,6 +18,7 @@ import * as captcha from './controllers/captcha'
 const app = express()
 ws(app)
 app
+  .use(userAgentCheckerMiddleware)
   .use(cookieSession({
     httpOnly: false,
     maxAge: 8 * 60 * 60 * 1000,
